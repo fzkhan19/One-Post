@@ -1,0 +1,33 @@
+{
+	"biome.enabled": true,
+	"editor.formatOnSave": true,
+	"files.autoSaveDelay": 1400,
+	"files.autoSave": "afterDelay",
+	"editor.defaultFormatter": "biomejs.biome",
+	"tailwindCSS.includeLanguages": {
+		"plaintext": "html"
+	},
+	"files.associations": {
+		"*.css": "tailwindcss"
+	},
+	"editor.codeActionsOnSave": {
+		"source.fixAll": "explicit",
+		"source.organizeImports": "explicit",
+		"source.sortImports": "always",
+		"source.removeUnusedImports": "explicit",
+		"source.addMissingImports.ts": "always",
+		"source.fixAll.ts": "always",
+		"source.removeUnused.ts": "always"
+	},
+	"emeraldwalk.runonsave": {
+		"commands": [
+			{
+				"match": "\\.(js|ts|jsx|tsx)$",
+				"cmd": "bunx @biomejs/biome lint ${file} --write --unsafe"
+			}
+		]
+	},
+	"[html]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	}
+}

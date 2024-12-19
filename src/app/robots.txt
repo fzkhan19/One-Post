@@ -1,0 +1,18 @@
+
+User-agent: *
+Allow: /
+Disallow: /private/
+Disallow: /admin/
+
+User-agent: Googlebot
+Allow: /
+Disallow: /private/
+Disallow: /admin/
+Noimageindex: /
+Max-Video-Preview: -1
+Max-Image-Preview: large
+Max-Snippet: -1
+
+Sitemap: https://site-url.com/sitemap.xml
+
+Cache-Control: no-store, no-cache, must-revalidate

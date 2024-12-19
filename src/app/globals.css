@@ -1,0 +1,162 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+@layer utilities {
+  /* Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+  }
+}
+
+@layer base {
+  :root {
+    --background: 247 50% 100%;
+    --foreground: 247 54% 0%;
+    --muted: 217 15% 93%;
+    --muted-foreground: 217 5% 26%;
+    --popover: 247 50% 100%;
+    --popover-foreground: 247 54% 0%;
+    --card: 247 50% 100%;
+    --card-foreground: 247 54% 0%;
+    --border: 247 7% 92%;
+    --input: 247 7% 92%;
+    --primary: 247 59% 77%;
+    --primary-foreground: 247 59% 17%;
+    --secondary: 217 59% 77%;
+    --secondary-foreground: 217 59% 17%;
+    --accent: 275 100% 41%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 16 81% 26%;
+    --destructive-foreground: 16 81% 86%;
+    --ring: 247 59% 77%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 247 47% 0%;
+    --foreground: 247 16% 98%;
+    --muted: 217 15% 7%;
+    --muted-foreground: 217 5% 74%;
+    --popover: 247 47% 0%;
+    --popover-foreground: 247 16% 98%;
+    --card: 247 47% 0%;
+    --card-foreground: 247 16% 98%;
+    --border: 247 7% 12%;
+    --input: 247 7% 12%;
+    --primary: 247 59% 77%;
+    --primary-foreground: 247 59% 17%;
+    --secondary: 217 59% 77%;
+    --secondary-foreground: 217 59% 17%;
+    --accent: 48 100% 65%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 16 81% 58%;
+    --destructive-foreground: 0 0% 0%;
+    --ring: 247 59% 77%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+h1 > a > .icon.icon-link:before,
+h2 > a > .icon.icon-link:before,
+h3 > a > .icon.icon-link:before {
+  content: "#";
+  font-size: 0.8rem;
+}
+
+h2 > a,
+h3 > a {
+  text-decoration: none !important;
+}
+
+code {
+  counter-reset: line;
+}
+
+code > [data-line]::before {
+  counter-increment: line;
+  content: counter(line);
+
+  /* Other styling */
+  display: inline-block;
+  width: 1rem;
+  margin-right: 2rem;
+  text-align: right;
+  color: gray;
+}
+
+code[data-line-numbers-max-digits="2"] > [data-line]::before {
+  width: 2rem;
+}
+
+code[data-line-numbers-max-digits="3"] > [data-line]::before {
+  width: 3rem;
+}
+
+[data-highlighted-line] {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  padding: 2px;
+  padding-left: 0;
+  padding-right: 4px;
+  border-radius: 2px;
+  border-left: 2px solid #7b00d3;
+}
+
+[data-highlighted-chars] {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  padding: 2px;
+  border-radius: 2px;
+}
+
+[data-rehype-pretty-code-fragment] {
+  position: relative;
+}
+
+[data-rehype-pretty-code-title] {
+  position: absolute;
+  right: 0;
+  background-color: #7b00d3;
+  color: #fff;
+  padding: 4px 8px;
+  font-size: 1rem;
+  border-end-start-radius: 4px;
+}
+
+[data-rehype-pretty-code-caption] {
+  position: absolute;
+  top: 100%;
+  width: 100%;
+  text-align: center;
+  font-size: 1rem;
+  color: #747474;
+}
