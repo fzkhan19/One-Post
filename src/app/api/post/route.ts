@@ -6,24 +6,23 @@ export async function POST(request: Request) {
 	const accessToken = request.headers.get("x-linkedin-token");
 
 	try {
-		// First get the person ID
-		const profileResponse = await fetch("https://api.linkedin.com/v2/me", {
-			headers: {
-				"Authorization": `Bearer ${accessToken}`,
-				"X-Restli-Protocol-Version": "2.0.0"
-			}
-		});
-
-		const profileData = await profileResponse.json();
-		const personId = profileData.id;
-
+		const userInfoResponse = await fetch(
+			"https://api.linkedin.com/v2/userinfo",
+			{
+				headers: {
+					Authorization: `Bearer ${accessToken}`,
+				},
+			},
+		);
+		const userInfo = await userInfoResponse.json();
+		const personId = userInfo.sub;
 		// Create the post
 		const postResponse = await fetch("https://api.linkedin.com/v2/ugcPosts", {
 			method: "POST",
 			headers: {
-				"Authorization": `Bearer ${accessToken}`,
+				Authorization: `Bearer ${accessToken}`,
 				"Content-Type": "application/json",
-				"X-Restli-Protocol-Version": "2.0.0"
+				"X-Restli-Protocol-Version": "2.0.0",
 			},
 			body: JSON.stringify({
 				author: `urn:li:person:${personId}`,
@@ -31,15 +30,15 @@ export async function POST(request: Request) {
 				specificContent: {
 					"com.linkedin.ugc.ShareContent": {
 						shareCommentary: {
-							text: content
+							text: content,
 						},
-						shareMediaCategory: "NONE"
-					}
+						shareMediaCategory: "NONE",
+					},
 				},
 				visibility: {
-					"com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"
-				}
-			})
+					"com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC",
+				},
+			}),
 		});
 
 		const postData = await postResponse.json();
@@ -48,24 +47,29 @@ export async function POST(request: Request) {
 			return NextResponse.json({
 				success: true,
 				message: "Post published successfully",
-				data: postData
+				data: postData,
 			});
 		}
-			return NextResponse.json({
+		return NextResponse.json(
+			{
 				success: false,
 				error: "Failed to publish post",
-				details: postData
-			}, {
-				status: postResponse.status
-			});
-
+				details: postData,
+			},
+			{
+				status: postResponse.status,
+			},
+		);
 	} catch (error) {
-		return NextResponse.json({
-			success: false,
-			error: "Failed to post content",
-			details: error
-		}, {
-			status: 500
-		});
+		return NextResponse.json(
+			{
+				success: false,
+				error: "Failed to post content",
+				details: error,
+			},
+			{
+				status: 500,
+			},
+		);
 	}
 }

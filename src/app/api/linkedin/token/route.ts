@@ -1,4 +1,4 @@
-import {NextResponse} from "next/server";
+import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
 	try {
@@ -25,20 +25,7 @@ export async function POST(request: Request) {
 		);
 
 		const data = await tokenResponse.json();
-		console.log("ACCESS TOKEN:::", data.access_token);
-
-		// Call the LinkedIn API to get user info
-		const userInfoResponse = await fetch(
-			"https://api.linkedin.com/v2/userinfo",
-			{
-				headers: {
-					Authorization: `Bearer ${data.access_token}`,
-				},
-			},
-		);
-		const userInfo = await userInfoResponse.json();
-
-		return NextResponse.json({ ...data, userInfo });
+		return NextResponse.json({ data });
 	} catch (error) {
 		return NextResponse.json({ error: "Failed to get token" }, { status: 500 });
 	}

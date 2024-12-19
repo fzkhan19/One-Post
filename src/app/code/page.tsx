@@ -12,7 +12,6 @@ export default function CodePage() {
 		if (code) {
 			// Store the code in localStorage or state management solution
 			localStorage.setItem("linkedin_auth_code", code);
-			console.log("LinkedIn auth code:", code);
 			// Redirect back to main page
 			router.push("/");
 		}
