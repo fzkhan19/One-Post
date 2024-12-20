@@ -2,6 +2,7 @@
 
 import { LinkedInAuth } from "@/components/LinkedInAuth";
 import { Button } from "@/components/ui/button";
+import {Textarea} from "@/components/ui/textarea";
 import { useState } from "react";
 
 export default function Home() {
@@ -10,7 +11,7 @@ export default function Home() {
 
 	const handlePost = async () => {
 		try {
-			const response = await fetch("/api/post", {
+			const response = await fetch("/api/linkedin/post", {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
@@ -45,7 +46,7 @@ export default function Home() {
 				/>
 
 				<div className="space-y-4">
-					<textarea
+					<Textarea
 						value={postContent}
 						onChange={(e) => setPostContent(e.target.value)}
 						className="w-full rounded border p-4"
