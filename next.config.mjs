@@ -12,11 +12,11 @@ const nextConfig = {
 						key: "X-Frame-Options",
 						value: "DENY",
 					},
-					{
-						key: "Content-Security-Policy",
-						value:
-							"default-src 'self'; img-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' ; style-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'self'; frame-src 'self'",
-					},
+					// {
+					// 	key: "Content-Security-Policy",
+					// 	value:
+					// 		"default-src 'self'; img-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' ; style-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'self'; frame-src 'self'",
+					// },
 					{
 						key: "X-Content-Type-Options",
 						value: "nosniff",
@@ -34,7 +34,6 @@ const nextConfig = {
 		];
 	},
 };
-
 
 export default nextConfig;
 // export default MillionLint.next({
