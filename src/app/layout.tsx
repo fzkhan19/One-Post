@@ -1,4 +1,5 @@
 import Providers from "@/components/layout/Providers";
+import { Navbar } from "@/components/layout/navbar";
 import { JSON_LD, METADATA } from "@/constants/Metadata";
 import { cn } from "@/lib/utils";
 import { ClerkProvider } from "@clerk/nextjs";
@@ -54,7 +55,10 @@ export default function RootLayout({
 							dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
 							type="application/ld+json"
 						/>
-						<Providers>{children}</Providers>
+						<Providers>
+							<Navbar />
+							{children}
+						</Providers>
 					</main>
 				</body>
 			</ClerkProvider>
