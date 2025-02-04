@@ -47,6 +47,9 @@ export default function RootLayout({
 					},
 				}}
 			>
+				<head>
+					<meta name="apple-mobile-web-app-title" content="OnePost" />
+				</head>
 				<body className={cn("", inter.variable, manrope.variable)}>
 					<main className="no-scrollbar overflow-x-hidden overflow-y-scroll scroll-smooth">
 						<Analytics />

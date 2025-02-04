@@ -21,6 +21,7 @@ import {
 	NavigationMenuItem,
 	NavigationMenuList,
 } from "@/components/ui/navigation-menu";
+import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import Image from "next/image";
 import { ToggleTheme as ToggleThemeComponent } from "../toggle-theme";
 
@@ -39,20 +40,20 @@ const CustomNavigationMenu = React.memo(() => {
 	const routeList: RouteProps[] = useMemo(
 		() => [
 			{
-				href: "#about",
+				href: "/dashboard",
+				label: "Dashboard",
+			},
+			{
+				href: "/about",
 				label: "About",
 			},
 			{
-				href: "#projects",
-				label: "Projects",
+				href: "/post",
+				label: "Post",
 			},
 			{
-				href: "#contact",
+				href: "/contact",
 				label: "Contact",
-			},
-			{
-				href: "/blog",
-				label: "Blog",
 			},
 		],
 		[],
@@ -158,6 +159,12 @@ export const Navbar = () => {
 						<MemoizedSheetFooter className="w-full flex-col items-start justify-start sm:flex-col">
 							<Separator className="mb-2" />
 							<div className="flex w-full items-center justify-between">
+								<SignedIn>
+									<UserButton />
+								</SignedIn>
+								<SignedOut>
+									<SignInButton />
+								</SignedOut>
 								<ToggleTheme />
 								<Link className="mx-3" href={"/"}>
 									<Button
@@ -177,12 +184,13 @@ export const Navbar = () => {
 			{/* <!-- Desktop --> */}
 			<CustomNavigationMenu />
 
-			<div className="hidden items-center lg:flex">
-				<Link className="mx-3" href={"/"}>
-					<Button className="w-full justify-start" size="sm" variant="ghost">
-						<Home className="size-5" />
-					</Button>
-				</Link>
+			<div className="hidden items-center gap-6 lg:flex">
+				<SignedIn>
+					<UserButton />
+				</SignedIn>
+				<SignedOut>
+					<SignInButton />
+				</SignedOut>
 				<ToggleTheme />
 			</div>
 		</header>

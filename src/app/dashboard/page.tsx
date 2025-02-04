@@ -1,3 +1,5 @@
+"use client";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,15 +20,19 @@ import {
 	Share2,
 	Sparkles,
 } from "lucide-react";
-import type { Metadata } from "next";
 
-export const metadata: Metadata = {
-	title: "Dashboard | One Post",
-
-	description: "Your social media command center",
-};
+import { useSearchParams } from "next/navigation";
+import { useState } from "react";
+import MultiStepForm from "../../components/MultiStepForm";
 
 export default function Dashboard() {
+	const searchParams = useSearchParams();
+	const isSignup = searchParams.get("signup") === "true";
+	const [showModal, setShowModal] = useState(isSignup);
+
+	const handleCloseModal = () => {
+		setShowModal(false);
+	};
 	return (
 		<div className="container mx-auto p-8">
 			<div className="mb-8 flex items-center justify-between">
@@ -197,6 +203,13 @@ export default function Dashboard() {
 					</Card>
 				</div>
 			</div>
+			{showModal && (
+				<div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+					<div className="rounded-lg bg-white p-6">
+						<MultiStepForm onClose={handleCloseModal} />
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }
