@@ -1,0 +1,38 @@
+import { postToBluesky } from "@/lib/platforms/bluesky";
+import { NextResponse } from "next/server";
+
+export async function POST(request: Request) {
+	try {
+		const { content } = await request.json();
+
+		if (!content) {
+			return NextResponse.json(
+				{ success: false, error: "Content is required" },
+				{ status: 400 },
+			);
+		}
+
+		const result = await postToBluesky(content);
+
+		if (result.success) {
+			return NextResponse.json({
+				success: true,
+				message: "Posted to Bluesky successfully",
+				data: result.data,
+			});
+		}
+		return NextResponse.json(
+			{
+				success: false,
+				error: result.error || "Failed to post to Bluesky",
+			},
+			{ status: 500 },
+		);
+	} catch (error) {
+		console.error("Error in Bluesky API route:", error);
+		return NextResponse.json(
+			{ success: false, error: "Internal server error" },
+			{ status: 500 },
+		);
+	}
+}

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack --experimental-https",
+    "dev": "next dev --experimental-https",
     "build": "next build",
     "start": "next start",
     "lint": "biome lint --write",
@@ -20,6 +20,8 @@
   },
   "dependencies": {
     "@atproto/api": "^0.13.21",
+    "@clerk/nextjs": "^7.3.1",
+    "@google/generative-ai": "^0.24.1",
     "@million/lint": "^1.0.0-rc.84",
     "@radix-ui/react-avatar": "^1.1.0",
     "@radix-ui/react-dialog": "^1.1.1",
