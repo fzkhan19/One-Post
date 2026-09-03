@@ -6,48 +6,29 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted  # Runs directly on the Oracle VPS — no SSH needed
 
     steps:
-      - name: Setup SSH key
+      - name: Pull latest code
         run: |
-          mkdir -p ~/.ssh
-          # Write key using printf to avoid any shell interpretation issues
-          printf '%s' "$SSH_KEY" > ~/.ssh/deploy_key
-          # Strip any Windows CRLF line endings
-          sed -i 's/\r//' ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          # Verify key is valid
-          ssh-keygen -l -f ~/.ssh/deploy_key
-        env:
-          SSH_KEY: ${{ secrets.ORACLE_SSH_KEY }}
-
-      - name: Deploy to Oracle VPS
-        run: |
-          ssh -i ~/.ssh/deploy_key \
-            -o StrictHostKeyChecking=no \
-            -o UserKnownHostsFile=/dev/null \
-            -o ServerAliveInterval=30 \
-            -o ServerAliveCountMax=5 \
-            -o ConnectTimeout=30 \
-            ${{ secrets.ORACLE_USER }}@${{ secrets.ORACLE_HOST }} << 'ENDSSH'
-          set -e
-          export PATH=/usr/local/bin:/home/ubuntu/.bun/bin:$PATH
-
-          echo "==> Pulling latest code..."
           cd /home/ubuntu/One-Post
           git fetch origin main
           git reset --hard origin/main
 
-          echo "==> Installing dependencies..."
+      - name: Install dependencies
+        run: |
+          export PATH=/usr/local/bin:/home/ubuntu/.bun/bin:$PATH
+          cd /home/ubuntu/One-Post
           bun install
 
-          echo "==> Building Next.js..."
+      - name: Build Next.js
+        run: |
+          export PATH=/usr/local/bin:/home/ubuntu/.bun/bin:$PATH
+          cd /home/ubuntu/One-Post
           bun run build
 
-          echo "==> Restarting PM2..."
+      - name: Reload PM2
+        run: |
+          export PATH=/usr/local/bin:/home/ubuntu/.bun/bin:$PATH
           pm2 restart one-post
-
-          echo "==> Deployment complete!"
           pm2 list
-          ENDSSH
