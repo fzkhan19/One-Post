@@ -119,6 +119,7 @@ The JSON must follow this exact structure:
       const response = await fetch(`${ollamaHost}/api/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: AbortSignal.timeout(12000),
         body: JSON.stringify({
           model: ollamaModel,
           prompt: `${systemPrompt}\n\nIMPORTANT: Output only the raw JSON string. Do not output anything else.`,
