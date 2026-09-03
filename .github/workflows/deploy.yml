@@ -12,9 +12,15 @@ jobs:
       - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.ORACLE_SSH_KEY }}" > ~/.ssh/deploy_key
+          # Write key using printf to avoid any shell interpretation issues
+          printf '%s' "$SSH_KEY" > ~/.ssh/deploy_key
+          # Strip any Windows CRLF line endings
+          sed -i 's/\r//' ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -p 22 -H ${{ secrets.ORACLE_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+          # Verify key is valid
+          ssh-keygen -l -f ~/.ssh/deploy_key
+        env:
+          SSH_KEY: ${{ secrets.ORACLE_SSH_KEY }}
 
       - name: Deploy to Oracle VPS
         run: |
@@ -23,6 +29,7 @@ jobs:
             -o UserKnownHostsFile=/dev/null \
             -o ServerAliveInterval=30 \
             -o ServerAliveCountMax=5 \
+            -o ConnectTimeout=30 \
             ${{ secrets.ORACLE_USER }}@${{ secrets.ORACLE_HOST }} << 'ENDSSH'
           set -e
           export PATH=/usr/local/bin:/home/ubuntu/.bun/bin:$PATH
