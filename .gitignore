@@ -41,3 +41,8 @@ next-env.d.ts
 certificates
 # clerk configuration (can include secrets)
 /.clerk/
+
+# Playwright & Scratch
+.playwright-mcp/
+scratch/
+public/generated/

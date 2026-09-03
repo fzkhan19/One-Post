@@ -131,32 +131,22 @@ export const METADATA: Metadata = {
 
 export const JSON_LD = {
 	"@context": "https://schema.org",
-	"@type": "Person",
-	name: siteMetadata.author,
+	"@type": "SoftwareApplication",
+	name: siteMetadata.title,
+	applicationCategory: "BusinessApplication",
+	operatingSystem: "All",
 	url: siteMetadata.siteUrl,
 	image: `${siteMetadata.siteUrl}${siteMetadata.socialBanner}`,
-	description: siteMetadata.personalDescription,
-	jobTitle: siteMetadata.occupation,
-	worksFor: {
-		"@type": "Organization",
-		name: siteMetadata.company,
+	description: siteMetadata.description,
+	author: {
+		"@type": "Person",
+		name: siteMetadata.author,
+		url: siteMetadata.linkedin,
 	},
-	address: {
-		"@type": "PostalAddress",
-		addressLocality: siteMetadata.location,
-		addressCountry: siteMetadata.countryCode,
-	},
-	contactPoint: {
-		"@type": "ContactPoint",
-		telephone: siteMetadata.phone,
-		contactType: "Customer Service",
-		availableLanguage: siteMetadata.language,
-		areaServed: siteMetadata.areaServed,
-	},
-	sameAs: siteMetadata.socialLinks,
-	hasOccupation: {
-		"@type": "Occupation",
-		name: siteMetadata.occupation,
-		description: siteMetadata.occupationDescription,
+	offers: {
+		"@type": "Offer",
+		price: "0",
+		priceCurrency: "USD",
 	},
 };
+

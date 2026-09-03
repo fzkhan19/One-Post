@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || "");
-const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 export type Platform = "linkedin" | "twitter" | "bluesky";
 
@@ -18,23 +18,32 @@ export async function generatePost(platform: Platform, topic: string) {
 	const prompt = `${PROMPTS[platform]}${topic}`;
 
 	if (process.env.USE_OLLAMA === "true") {
+		const ollamaHost = process.env.OLLAMA_HOST || "http://pc-4172.kl.dfki.de:11434";
+		const ollamaModel = process.env.OLLAMA_MODEL || "qwen3.8:27b";
 		try {
-			const response = await fetch("http://localhost:11434/api/generate", {
+			const response = await fetch(`${ollamaHost}/api/generate`, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
-					model: process.env.OLLAMA_MODEL || "qwen3:8b",
-					prompt: prompt,
+					model: ollamaModel,
+					prompt: `${prompt}\n\nDo not output thinking tags or commentary. Output only the final social media post.`,
 					stream: false,
 				}),
 			});
+
+			if (!response.ok) {
+				throw new Error(`Ollama HTTP error ${response.status}`);
+			}
+
 			const data = await response.json();
-			return data.response.trim();
+			let text = (data.response || "").trim();
+			// Remove <think>...</think> block if present
+			text = text.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+			if (text) {
+				return text;
+			}
 		} catch (error) {
-			console.error("Error generating with Ollama:", error);
-			// Fallback to Gemini if Ollama fails? Or just throw?
-			// For now, let's just throw or return error.
-			throw new Error("Ollama generation failed");
+			console.error("[Spark Ollama] Failed generating via Spark 2, falling back to Gemini:", error);
 		}
 	}
 

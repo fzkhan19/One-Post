@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
 	try {
-		const { content } = await request.json();
+		const { content, mediaPath } = await request.json();
 
 		if (!content) {
 			return NextResponse.json(
@@ -12,7 +12,7 @@ export async function POST(request: Request) {
 			);
 		}
 
-		const result = await postToBluesky(content);
+		const result = await postToBluesky(content, mediaPath);
 
 		if (result.success) {
 			return NextResponse.json({

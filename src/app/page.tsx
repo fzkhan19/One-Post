@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, LayoutDashboard, Link2, Loader2, PlusCircle, Send, Sparkles } from "lucide-react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { useEffect, useState, Suspense } from "react";
 import { toast } from "sonner";
 
@@ -33,6 +34,36 @@ function HomeContent() {
 		twitter: false,
 		bluesky: false,
 	});
+
+	// Spark 2 State
+	const [sparkStatus, setSparkStatus] = useState<{
+		comfyui: string;
+		ollama: string;
+		gpu: string;
+		vram: string;
+	} | null>(null);
+	const [mediaType, setMediaType] = useState<"none" | "image" | "video">("image");
+	const [mediaModel, setMediaModel] = useState<"flux" | "flux2">("flux");
+	const [customMediaPrompt, setCustomMediaPrompt] = useState("");
+	const [isGeneratingMedia, setIsGeneratingMedia] = useState(false);
+	const [generatedMedia, setGeneratedMedia] = useState<{
+		url: string;
+		type: "image" | "video";
+		filename: string;
+		sizeKb: number;
+	} | null>(null);
+
+	// Query Spark status on mount
+	useEffect(() => {
+		fetch("/api/spark/status")
+			.then((res) => res.json())
+			.then((data) => {
+				if (data?.spark) {
+					setSparkStatus(data.spark);
+				}
+			})
+			.catch(() => {});
+	}, []);
 
 	// Load token from localStorage on mount and check for auth code
 	useEffect(() => {
@@ -91,6 +122,46 @@ function HomeContent() {
 		}
 	};
 
+	const handleGenerateSparkMedia = async (targetPrompt?: string) => {
+		const promptToUse = targetPrompt || customMediaPrompt || topic;
+		if (!promptToUse) {
+			toast.error("Enter a topic or media prompt first");
+			return;
+		}
+
+		setIsGeneratingMedia(true);
+		try {
+			toast.info(`Triggering Spark 2 GPU (${mediaType === "video" ? "Hunyuan" : "Flux"})...`);
+			const res = await fetch("/api/spark/generate-media", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					prompt: promptToUse,
+					mediaType,
+					model: mediaModel,
+				}),
+			});
+
+			const data = await res.json();
+			if (data.success) {
+				setGeneratedMedia({
+					url: data.url,
+					type: data.mediaType,
+					filename: data.filename,
+					sizeKb: data.sizeKb,
+				});
+				toast.success("Spark 2 Media Asset generated!");
+			} else {
+				toast.error(data.error || "Spark 2 generation failed");
+			}
+		} catch (err) {
+			console.error("Error generating Spark media:", err);
+			toast.error("Failed to generate media on Spark 2");
+		} finally {
+			setIsGeneratingMedia(false);
+		}
+	};
+
 	const handleGenerate = async () => {
 		if (!topic) {
 			toast.error("Please enter a topic first");
@@ -99,6 +170,7 @@ function HomeContent() {
 
 		setIsGenerating(true);
 		try {
+			// 1. Text Generation on Spark Ollama (Qwen 3.8 27B)
 			const response = await fetch("/api/ai/generate", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -108,9 +180,14 @@ function HomeContent() {
 			const result = await response.json();
 			if (result.success) {
 				setPosts(result.data);
-				toast.success("Posts generated successfully!");
+				toast.success("Drafts generated via Spark Ollama!");
 			} else {
 				toast.error(result.error || "Failed to generate posts");
+			}
+
+			// 2. Automatically trigger Spark Media Generation if selected
+			if (mediaType !== "none") {
+				handleGenerateSparkMedia(customMediaPrompt || topic);
 			}
 		} catch (error) {
 			console.error("Error generating posts:", error);
@@ -147,10 +224,18 @@ function HomeContent() {
 					headers["x-linkedin-token"] = accessToken;
 				}
 
+				const payload: { content: string; mediaPath?: string } = {
+					content: posts[platform],
+				};
+
+				if (generatedMedia?.url) {
+					payload.mediaPath = generatedMedia.url;
+				}
+
 				const response = await fetch(endpoint, {
 					method: "POST",
 					headers,
-					body: JSON.stringify({ content: posts[platform] }),
+					body: JSON.stringify(payload),
 				});
 
 				const data = await response.json();
@@ -194,14 +279,22 @@ function HomeContent() {
 							</div>
 							<span className="text-xs font-bold tracking-widest uppercase">ONE_POST_v1.0.4 // TERMINAL</span>
 						</div>
-						<div className="text-[10px] opacity-70">
-							SYS_AUTH: {accessToken ? "ACTIVE" : "PENDING"}
+						<div className="flex items-center gap-4 text-[10px]">
+							<div className="flex items-center gap-1.5">
+								<span className={`w-2 h-2 rounded-full ${sparkStatus?.comfyui === 'ONLINE' ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`} />
+								<span className="font-bold uppercase tracking-wider">
+									SPARK2_CORE: {sparkStatus ? `${sparkStatus.comfyui} (${sparkStatus.vram})` : "DETECTING..."}
+								</span>
+							</div>
+							<div className="opacity-70">
+								SYS_AUTH: {accessToken ? "ACTIVE" : "PENDING"}
+							</div>
 						</div>
 					</div>
 
 					<div className="p-6 md:p-10 space-y-12">
 						{/* Navigation Tabs - Brutalist Style */}
-						<div className="flex justify-start">
+						<div className="flex flex-wrap items-center justify-between gap-4">
 							<Tabs value={activeTab} onValueChange={setActiveTab} className="w-full md:w-auto">
 								<TabsList className="flex h-auto p-0 bg-transparent gap-0 border-[3px] border-black dark:border-white">
 									<TabsTrigger 
@@ -218,6 +311,13 @@ function HomeContent() {
 									</TabsTrigger>
 								</TabsList>
 							</Tabs>
+
+							<Link
+								href="/mock-news"
+								className="px-6 py-3 border-[3px] border-red-600 bg-red-600 text-white hover:bg-red-700 font-black text-xs uppercase tracking-tight flex items-center gap-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+							>
+								<span>📰 03. MOCK_NEWS_GENERATOR</span>
+							</Link>
 						</div>
 
 						<AnimatePresence mode="wait">
@@ -232,11 +332,16 @@ function HomeContent() {
 									{/* Topic Input Section - Command Line Style */}
 									<div className="space-y-6">
 										<div className="space-y-4">
-											<div className="flex items-center gap-2 text-indigo-600 dark:text-accent font-black text-xl">
-												<span className="animate-pulse">▶</span>
-												<Label htmlFor="topic" className="uppercase tracking-tighter">
-													Input Topic Stream:
-												</Label>
+											<div className="flex items-center justify-between">
+												<div className="flex items-center gap-2 text-indigo-600 dark:text-accent font-black text-xl">
+													<span className="animate-pulse">▶</span>
+													<Label htmlFor="topic" className="uppercase tracking-tighter">
+														Input Topic Stream:
+													</Label>
+												</div>
+												<span className="text-[10px] bg-black dark:bg-white text-white dark:text-black px-2 py-0.5 font-bold uppercase">
+													LLM ENGINE: SPARK OLLAMA (QWEN 3.8 27B)
+												</span>
 											</div>
 											<div className="relative group">
 												<span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 font-bold group-focus-within:text-black dark:group-focus-within:text-white transition-colors">{'>'}</span>
@@ -249,6 +354,120 @@ function HomeContent() {
 												/>
 											</div>
 										</div>
+
+										{/* Spark 2 Media Studio Controls */}
+										<div className="border-[3px] border-black dark:border-white bg-zinc-50 dark:bg-zinc-800/50 p-6 space-y-4">
+											<div className="flex flex-wrap items-center justify-between gap-4 border-b-2 border-black dark:border-white pb-3">
+												<div className="flex items-center gap-2">
+													<span className="font-black text-sm uppercase tracking-tight">⚡ SPARK 2 MEDIA STUDIO (GPU ACCELERATED)</span>
+												</div>
+												<div className="flex items-center gap-2 text-xs font-bold">
+													<span className="text-zinc-500 uppercase">MEDIA TYPE:</span>
+													<button
+														type="button"
+														onClick={() => setMediaType("none")}
+														className={`px-3 py-1 border-2 border-black dark:border-white uppercase ${mediaType === "none" ? "bg-black text-white dark:bg-white dark:text-black" : "bg-white dark:bg-zinc-900"}`}
+													>
+														NONE
+													</button>
+													<button
+														type="button"
+														onClick={() => setMediaType("image")}
+														className={`px-3 py-1 border-2 border-black dark:border-white uppercase ${mediaType === "image" ? "bg-black text-white dark:bg-white dark:text-black" : "bg-white dark:bg-zinc-900"}`}
+													>
+														FLUX IMAGE
+													</button>
+													<button
+														type="button"
+														onClick={() => setMediaType("video")}
+														className={`px-3 py-1 border-2 border-black dark:border-white uppercase ${mediaType === "video" ? "bg-black text-white dark:bg-white dark:text-black" : "bg-white dark:bg-zinc-900"}`}
+													>
+														HUNYUAN VIDEO
+													</button>
+												</div>
+											</div>
+
+											{mediaType !== "none" && (
+												<div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+													<div className="md:col-span-2 space-y-3">
+														{mediaType === "image" && (
+															<div className="flex items-center gap-2 text-xs font-bold">
+																<span className="text-zinc-500 uppercase">IMAGE ENGINE:</span>
+																<button
+																	type="button"
+																	onClick={() => setMediaModel("flux")}
+																	className={`px-2 py-0.5 border border-black dark:border-white text-[10px] ${mediaModel === "flux" ? "bg-black text-white dark:bg-white dark:text-black" : ""}`}
+																>
+																	FLUX.1 SCHNELL (FAST)
+																</button>
+																<button
+																	type="button"
+																	onClick={() => setMediaModel("flux2")}
+																	className={`px-2 py-0.5 border border-black dark:border-white text-[10px] ${mediaModel === "flux2" ? "bg-black text-white dark:bg-white dark:text-black" : ""}`}
+																>
+																	FLUX.2 DEV (ULTRA HD)
+																</button>
+															</div>
+														)}
+														<Input
+															value={customMediaPrompt}
+															onChange={(e) => setCustomMediaPrompt(e.target.value)}
+															placeholder="OPTIONAL CUSTOM MEDIA PROMPT (DEFAULTS TO TOPIC)..."
+															className="h-10 text-xs rounded-none border-2 border-black dark:border-white bg-white dark:bg-zinc-900 font-bold"
+														/>
+														<Button
+															type="button"
+															onClick={() => handleGenerateSparkMedia()}
+															disabled={isGeneratingMedia || (!customMediaPrompt && !topic)}
+															className="h-10 px-4 rounded-none border-2 border-black dark:border-white bg-black dark:bg-white text-white dark:text-black text-xs font-black uppercase hover:bg-zinc-800"
+														>
+															{isGeneratingMedia ? (
+																<span className="flex items-center gap-2">
+																	<Loader2 className="h-4 w-4 animate-spin" />
+																	RENDERING ON SPARK GPU...
+																</span>
+															) : (
+																<span>GENERATE {mediaType.toUpperCase()} SEPARATELY</span>
+															)}
+														</Button>
+													</div>
+
+													{/* Preview Card */}
+													<div className="border-2 border-black dark:border-white bg-black/5 dark:bg-white/5 flex items-center justify-center p-2 min-h-[140px]">
+														{isGeneratingMedia ? (
+															<div className="text-center space-y-2">
+																<Loader2 className="h-8 w-8 animate-spin mx-auto text-accent" />
+																<p className="text-[10px] font-bold uppercase">Spark 2 Rendering...</p>
+															</div>
+														) : generatedMedia ? (
+															<div className="relative w-full h-full flex flex-col items-center">
+																{generatedMedia.type === "image" ? (
+																	<img
+																		src={generatedMedia.url}
+																		alt="Generated Spark Media"
+																		className="max-h-36 object-contain border border-black dark:border-white"
+																	/>
+																) : (
+																	<video
+																		src={generatedMedia.url}
+																		controls
+																		className="max-h-36 object-contain border border-black dark:border-white"
+																	/>
+																)}
+																<span className="text-[9px] font-bold text-zinc-500 uppercase mt-1">
+																	ATTACHED ({generatedMedia.sizeKb} KB)
+																</span>
+															</div>
+														) : (
+															<span className="text-[10px] font-bold text-zinc-400 uppercase text-center">
+																NO MEDIA ATTACHED YET
+															</span>
+														)}
+													</div>
+												</div>
+											)}
+										</div>
+
 										<Button 
 											onClick={handleGenerate} 
 											disabled={isGenerating || !topic}
@@ -257,12 +476,12 @@ function HomeContent() {
 											{isGenerating ? (
 												<span className="flex items-center gap-2">
 													<Loader2 className="h-6 w-6 animate-spin" />
-													EXECUTING_GENERATION...
+													EXECUTING_GENERATION (SPARK 2)...
 												</span>
 											) : (
 												<span className="flex items-center gap-2">
 													<Sparkles className="h-6 w-6" />
-													INITIALIZE_AI_DRAFT
+													INITIALIZE_AI_DRAFT (SPARK 2)
 												</span>
 											)}
 										</Button>

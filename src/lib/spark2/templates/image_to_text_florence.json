@@ -1,0 +1,64 @@
+{
+	"1": {
+		"inputs": {
+			"text_input": "",
+			"task": "detailed_caption",
+			"fill_mask": true,
+			"keep_model_loaded": false,
+			"max_new_tokens": 1024,
+			"num_beams": 3,
+			"do_sample": true,
+			"output_mask_select": "",
+			"seed": 519634595575087,
+			"image": ["3", 0],
+			"florence2_model": ["2", 0]
+		},
+		"class_type": "Florence2Run",
+		"_meta": {
+			"title": "Florence2Run"
+		}
+	},
+	"2": {
+		"inputs": {
+			"model": "Florence-2-base",
+			"precision": "fp16",
+			"attention": "sdpa"
+		},
+		"class_type": "Florence2ModelLoader",
+		"_meta": {
+			"title": "Florence2ModelLoader"
+		}
+	},
+	"3": {
+		"inputs": {
+			"image": "image (12).png"
+		},
+		"class_type": "LoadImage",
+		"_meta": {
+			"title": "Load Image"
+		}
+	},
+	"4": {
+		"inputs": {
+			"root_dir": "output",
+			"file": "file.txt",
+			"append": "overwrite",
+			"insert": true,
+			"text": ["1", 2]
+		},
+		"class_type": "SaveText|pysssss",
+		"_meta": {
+			"title": "Save Text 🐍"
+		}
+	},
+	"5": {
+		"inputs": {
+			"text2": "The image shows two dogs sitting on the side of a dirt road next to a herd of buffalo.",
+			"text": ["1", 2]
+		},
+		"class_type": "ShowText|pysssss",
+		"_meta": {
+			"title": "Show Text 🐍"
+		}
+	}
+}
