@@ -18,8 +18,9 @@ jobs:
           port: 22
           script: |
             set -e
+            export PATH=$HOME/.bun/bin:/usr/local/bin:$PATH
             echo "Pulling latest code from origin/main..."
-            cd ~/One-Post
+            cd /home/ubuntu/One-Post
             git fetch origin main
             git reset --hard origin/main
 
