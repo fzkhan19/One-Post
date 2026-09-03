@@ -1,0 +1,35 @@
+name: Auto Deploy to Oracle Cloud VPS
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to Oracle VPS via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.ORACLE_HOST }}
+          username: ${{ secrets.ORACLE_USER }}
+          key: ${{ secrets.ORACLE_SSH_KEY }}
+          port: 22
+          script: |
+            set -e
+            echo "Pulling latest code from origin/main..."
+            cd ~/One-Post
+            git fetch origin main
+            git reset --hard origin/main
+
+            echo "Installing dependencies..."
+            bun install
+
+            echo "Building Next.js application..."
+            bun run build
+
+            echo "Reloading PM2 process..."
+            pm2 restart one-post
+
+            echo "Deployment completed successfully!"
