@@ -74,7 +74,7 @@ export default function MockNewsPage() {
   const [selectedPlatforms, setSelectedPlatforms] = useState<Platform[]>(["twitter", "instagram", "tiktok"]);
   const [previewPlatform, setPreviewPlatform] = useState<Platform>("twitter");
   const [includeImage, setIncludeImage] = useState(true);
-  const [includeVideo, setIncludeVideo] = useState(true);
+  const [includeVideo, setIncludeVideo] = useState(false);
   const [mediaModel, setMediaModel] = useState<"flux" | "flux2">("flux");
   
   const [isGenerating, setIsGenerating] = useState(false);
@@ -144,6 +144,19 @@ export default function MockNewsPage() {
         }),
       });
 
+      if (!response.ok) {
+        let errMessage = `HTTP ${response.status}`;
+        try {
+          const errJson = await response.json();
+          errMessage = errJson.error || errMessage;
+        } catch (_) {
+          const errText = await response.text();
+          if (errText) errMessage = errText.slice(0, 120);
+        }
+        toast.error(`Generation error: ${errMessage}`);
+        return;
+      }
+
       const data = await response.json();
       if (data.success) {
         setResult(data.data);
@@ -151,9 +164,9 @@ export default function MockNewsPage() {
       } else {
         toast.error(data.error || "Failed to generate mock news.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      toast.error("An error occurred during generation.");
+      toast.error(err?.message || "An error occurred during generation (possible timeout).");
     } finally {
       setIsGenerating(false);
     }
