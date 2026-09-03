@@ -9,28 +9,38 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy to Oracle VPS via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.ORACLE_HOST }}
-          username: ${{ secrets.ORACLE_USER }}
-          key: ${{ secrets.ORACLE_SSH_KEY }}
-          port: 22
-          script: |
-            set -e
-            export PATH=$HOME/.bun/bin:/usr/local/bin:$PATH
-            echo "Pulling latest code from origin/main..."
-            cd /home/ubuntu/One-Post
-            git fetch origin main
-            git reset --hard origin/main
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.ORACLE_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p 22 -H ${{ secrets.ORACLE_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
 
-            echo "Installing dependencies..."
-            bun install
+      - name: Deploy to Oracle VPS
+        run: |
+          ssh -i ~/.ssh/deploy_key \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            -o ServerAliveInterval=30 \
+            -o ServerAliveCountMax=5 \
+            ${{ secrets.ORACLE_USER }}@${{ secrets.ORACLE_HOST }} << 'ENDSSH'
+          set -e
+          export PATH=/usr/local/bin:/home/ubuntu/.bun/bin:$PATH
 
-            echo "Building Next.js application..."
-            bun run build
+          echo "==> Pulling latest code..."
+          cd /home/ubuntu/One-Post
+          git fetch origin main
+          git reset --hard origin/main
 
-            echo "Reloading PM2 process..."
-            pm2 restart one-post
+          echo "==> Installing dependencies..."
+          bun install
 
-            echo "Deployment completed successfully!"
+          echo "==> Building Next.js..."
+          bun run build
+
+          echo "==> Restarting PM2..."
+          pm2 restart one-post
+
+          echo "==> Deployment complete!"
+          pm2 list
+          ENDSSH
