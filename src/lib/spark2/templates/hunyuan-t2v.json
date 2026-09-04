@@ -85,7 +85,7 @@
 	},
 	"26": {
 		"inputs": {
-			"guidance": 6,
+			"guidance": 3.5,
 			"conditioning": ["44", 0]
 		},
 		"class_type": "FluxGuidance",
@@ -127,8 +127,8 @@
 	},
 	"73": {
 		"inputs": {
-			"tile_size": 256,
-			"overlap": 64,
+			"tile_size": 384,
+			"overlap": 96,
 			"temporal_size": 64,
 			"temporal_overlap": 8,
 			"samples": ["13", 0],

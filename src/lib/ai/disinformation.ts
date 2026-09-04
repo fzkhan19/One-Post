@@ -42,16 +42,16 @@ const VECTOR_DESCRIPTIONS: Record<DisinformationVector, string> = {
 
 const PLATFORM_MEDIA_GUIDELINES: Record<Platform, { imageGuide: string; videoGuide: string }> = {
   twitter: {
-    imageGuide: "Landscape 16:9 news broadcast photograph, press photojournalism style with breaking news chyron or watermark.",
-    videoGuide: "16:9 landscape breaking news eyewitness or dashcam footage, documentary news camera work.",
+    imageGuide: "Landscape 16:9 news broadcast photograph, press photojournalism style with breaking news chyron, telephoto lens, natural journalistic lighting.",
+    videoGuide: "16:9 landscape steady broadcast news footage or documentary eyewitness camera, realistic motion blur, clean depth of field, authentic natural lighting, smooth steady camera movement, avoid morphing or exaggerated speed.",
   },
   instagram: {
-    imageGuide: "Square 1:1 or vertical 4:5 high-engagement Instagram carousel slide or bold infographic-style breaking news visual.",
-    videoGuide: "9:16 vertical Instagram Reel format, fast-paced dramatic clip with visual text hooks for mobile screen.",
+    imageGuide: "Square 1:1 or vertical 4:5 high-engagement Instagram slide, crisp editorial photojournalism, balanced color palette, authentic textures.",
+    videoGuide: "9:16 vertical Instagram Reel format, crisp smartphone video recording, natural ambient lighting, subtle handheld micro-movements, authentic documentary realism.",
   },
   tiktok: {
-    imageGuide: "9:16 vertical smartphone screen-capture, leaked document photograph or viral TikTok slideshow aesthetic.",
-    videoGuide: "9:16 vertical TikTok POV viral footage, handheld smartphone camera movement, high suspense, immersive UGC style.",
+    imageGuide: "9:16 vertical smartphone screen-capture, realistic phone camera photo or documentary evidence photograph, authentic grain and compression.",
+    videoGuide: "9:16 vertical TikTok eyewitness POV video, realistic smartphone camera optics, natural camera shake, authentic ambient lighting, coherent physical movements without surreal distortion.",
   },
 };
 

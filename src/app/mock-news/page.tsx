@@ -76,6 +76,7 @@ export default function MockNewsPage() {
   const [includeImage, setIncludeImage] = useState(true);
   const [includeVideo, setIncludeVideo] = useState(false);
   const [mediaModel, setMediaModel] = useState<"flux" | "flux2">("flux");
+  const [videoQuality, setVideoQuality] = useState<"fast" | "high">("high");
   
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -135,8 +136,10 @@ export default function MockNewsPage() {
     setResult(null);
 
     // Progress estimation based on selected media options
-    // Text-only: ~4-6s | Text+Image: ~14-18s | Text+Image+Video: ~60-90s
-    const totalEstimatedSeconds = includeVideo ? 80 : (includeImage ? 16 : 6);
+    // Text-only: ~4-6s | Text+Image: ~14-18s | Text+Image+Video (Fast): ~45s | Text+Image+Video (High): ~90-120s
+    const totalEstimatedSeconds = includeVideo 
+      ? (videoQuality === "high" ? 110 : 50) 
+      : (includeImage ? 16 : 6);
     const intervalMs = 250;
     const progressPerTick = (92 / (totalEstimatedSeconds * 1000 / intervalMs));
 
@@ -145,10 +148,10 @@ export default function MockNewsPage() {
       currentProgress = Math.min(currentProgress + progressPerTick, 94);
       setProgress(Math.floor(currentProgress));
 
-      if (currentProgress < 25) {
+      if (currentProgress < 20) {
         setActiveStage(1);
         setProgressStep("Phase 1/3: Synthesizing adversarial narrative & multi-platform copy (LLM)...");
-      } else if (currentProgress < 75) {
+      } else if (currentProgress < 60) {
         setActiveStage(2);
         if (includeImage) {
           setProgressStep(`Phase 2/3: Dispatching to Spark 2 GPU ComfyUI (${mediaModel === "flux2" ? "Flux.2 Dev" : "Flux Schnell"})...`);
@@ -158,7 +161,7 @@ export default function MockNewsPage() {
       } else {
         setActiveStage(3);
         if (includeVideo) {
-          setProgressStep("Phase 3/3: Spark 2 Hunyuan Video neural rendering in progress...");
+          setProgressStep(`Phase 3/3: Spark 2 Hunyuan Video neural rendering (${videoQuality === "high" ? "25 steps HQ" : "14 steps Draft"})...`);
         } else {
           setProgressStep("Phase 3/3: Assembling social mock structures & final payloads...");
         }
@@ -177,6 +180,7 @@ export default function MockNewsPage() {
           platform: selectedPlatforms[0],
           generateImage: includeImage,
           generateVideo: includeVideo,
+          videoQuality,
           mediaModel,
         }),
       });
@@ -445,9 +449,32 @@ export default function MockNewsPage() {
                         />
                       </div>
                       {includeVideo && (
-                        <p className="text-[10px] font-bold text-zinc-500 pt-0.5">
-                          Engine: Hunyuan Video (~3s dynamic video on Spark 2)
-                        </p>
+                        <div className="space-y-1.5 pt-1">
+                          <div className="flex items-center gap-2 text-[10px] font-bold">
+                            <span className="text-zinc-500 uppercase">Quality:</span>
+                            <button
+                              type="button"
+                              onClick={() => setVideoQuality("high")}
+                              className={`px-2 py-0.5 border border-black dark:border-white uppercase ${
+                                videoQuality === "high" ? "bg-black text-white dark:bg-white dark:text-black" : ""
+                              }`}
+                            >
+                              High Realism (25 Steps)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setVideoQuality("fast")}
+                              className={`px-2 py-0.5 border border-black dark:border-white uppercase ${
+                                videoQuality === "fast" ? "bg-black text-white dark:bg-white dark:text-black" : ""
+                              }`}
+                            >
+                              Fast Draft (14 Steps)
+                            </button>
+                          </div>
+                          <p className="text-[10px] font-bold text-zinc-500">
+                            Engine: Hunyuan Video 720p (DiT + LLaVA CLIP on Spark 2)
+                          </p>
+                        </div>
                       )}
                     </div>
                   </div>

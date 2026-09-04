@@ -128,10 +128,11 @@ export function setupTextToImage(prompt: string, options?: GenerateImageOptions)
 
 export function setupTextToVideo(prompt: string, options?: GenerateVideoOptions): WorkflowRequest {
   const seed = resolveSeed(options?.seed);
-  const steps = options?.steps ?? 20;
+  const steps = options?.steps ?? 25;
   const width = options?.width ?? 848;
   const height = options?.height ?? 480;
   const length = options?.length ?? 73; // ~3 seconds at 24fps
+  const guidance = options?.guidance ?? 3.5; // Optimal for Hunyuan to prevent over-saturation/artifacts
 
   const wf = deepClone(hunyuanWf) as Record<string, any>;
 
@@ -149,6 +150,15 @@ export function setupTextToVideo(prompt: string, options?: GenerateVideoOptions)
   if (wf['17']?.inputs) {
     wf['17'].inputs.steps = steps;
   }
+  // Node 26: FluxGuidance (CFG for Hunyuan)
+  if (wf['26']?.inputs) {
+    wf['26'].inputs.guidance = guidance;
+  }
+  // Node 73: VAEDecodeTiled (larger tile_size eliminates seam line artifacts)
+  if (wf['73']?.inputs) {
+    wf['73'].inputs.tile_size = 384;
+    wf['73'].inputs.overlap = 96;
+  }
   // Node 25: RandomNoise seed
   if (wf['25']?.inputs) {
     wf['25'].inputs.noise_seed = seed;
@@ -163,7 +173,7 @@ export function setupTextToVideo(prompt: string, options?: GenerateVideoOptions)
     workflow: wf,
     outputNodeId: '99',
     mediaType: 'video',
-    timeout: options?.timeout ?? 600000, // 10 minutes default
+    timeout: options?.timeout ?? 900000, // 15 minutes default
     onProgress: options?.onProgress,
     signal: options?.signal
   };

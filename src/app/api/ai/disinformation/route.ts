@@ -4,6 +4,8 @@ import { Spark2Client } from "@/lib/spark2";
 import fs from "fs/promises";
 import path from "path";
 
+export const maxDuration = 900; // 15 minutes max duration for video diffusion pipelines
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -96,14 +98,18 @@ export async function POST(request: NextRequest) {
               const vidWidth = primaryTarget === "twitter" ? 848 : 480;
               const vidHeight = primaryTarget === "twitter" ? 480 : 848;
 
+              // Video steps: high quality (25 steps) prevents distortion and grain
+              const videoSteps = body.videoQuality === "fast" ? 14 : 25;
+
               const vidGen = await sparkClient.generateVideo(videoPrompt, {
                 model: "hunyuan",
                 width: vidWidth,
                 height: vidHeight,
                 length: 73, // ~3 seconds at 24fps
-                steps: 12,
+                steps: videoSteps,
+                guidance: 3.5,
                 savePath,
-                timeout: 480000,
+                timeout: 900000, // 15 minutes max
               });
 
               videoResult = {
