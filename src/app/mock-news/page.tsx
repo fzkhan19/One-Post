@@ -78,6 +78,9 @@ export default function MockNewsPage() {
   const [mediaModel, setMediaModel] = useState<"flux" | "flux2">("flux");
   
   const [isGenerating, setIsGenerating] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [progressStep, setProgressStep] = useState("");
+  const [activeStage, setActiveStage] = useState<number>(0);
   const [isPosting, setIsPosting] = useState(false);
   const [result, setResult] = useState<(DisinformationResult & {
     image?: { url: string; filename: string; sizeKb: number } | null;
@@ -126,10 +129,44 @@ export default function MockNewsPage() {
     }
 
     setIsGenerating(true);
+    setProgress(5);
+    setActiveStage(1);
+    setProgressStep("Initializing pipeline & prompting LLM (Qwen 3.8 27B / Gemini)...");
     setResult(null);
 
+    // Progress estimation based on selected media options
+    // Text-only: ~4-6s | Text+Image: ~14-18s | Text+Image+Video: ~60-90s
+    const totalEstimatedSeconds = includeVideo ? 80 : (includeImage ? 16 : 6);
+    const intervalMs = 250;
+    const progressPerTick = (92 / (totalEstimatedSeconds * 1000 / intervalMs));
+
+    let currentProgress = 5;
+    const progressTimer = setInterval(() => {
+      currentProgress = Math.min(currentProgress + progressPerTick, 94);
+      setProgress(Math.floor(currentProgress));
+
+      if (currentProgress < 25) {
+        setActiveStage(1);
+        setProgressStep("Phase 1/3: Synthesizing adversarial narrative & multi-platform copy (LLM)...");
+      } else if (currentProgress < 75) {
+        setActiveStage(2);
+        if (includeImage) {
+          setProgressStep(`Phase 2/3: Dispatching to Spark 2 GPU ComfyUI (${mediaModel === "flux2" ? "Flux.2 Dev" : "Flux Schnell"})...`);
+        } else {
+          setProgressStep("Phase 2/3: Formatting platform payload & virality metrics...");
+        }
+      } else {
+        setActiveStage(3);
+        if (includeVideo) {
+          setProgressStep("Phase 3/3: Spark 2 Hunyuan Video neural rendering in progress...");
+        } else {
+          setProgressStep("Phase 3/3: Assembling social mock structures & final payloads...");
+        }
+      }
+    }, intervalMs);
+
     try {
-      toast.info(`Generating mock news for [${selectedPlatforms.join(", ")}] on Spark 2...`);
+      toast.info(`Generating mock news for [${selectedPlatforms.join(", ")}]...`);
       const response = await fetch("/api/ai/disinformation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -143,6 +180,8 @@ export default function MockNewsPage() {
           mediaModel,
         }),
       });
+
+      clearInterval(progressTimer);
 
       if (!response.ok) {
         let errMessage = `HTTP ${response.status}`;
@@ -159,16 +198,23 @@ export default function MockNewsPage() {
 
       const data = await response.json();
       if (data.success) {
+        setProgress(100);
+        setProgressStep("Complete: Adversarial payload synthesized!");
+        setActiveStage(3);
         setResult(data.data);
         toast.success("Mock news sample (Text + Assets) generated!");
       } else {
         toast.error(data.error || "Failed to generate mock news.");
       }
     } catch (err: any) {
+      clearInterval(progressTimer);
       console.error(err);
       toast.error(err?.message || "An error occurred during generation (possible timeout).");
     } finally {
-      setIsGenerating(false);
+      clearInterval(progressTimer);
+      setTimeout(() => {
+        setIsGenerating(false);
+      }, 500);
     }
   };
 
@@ -424,6 +470,74 @@ export default function MockNewsPage() {
                     </span>
                   )}
                 </Button>
+
+                {/* Staged Generation Progress Bar */}
+                {isGenerating && (
+                  <div className="p-4 border-[3px] border-black dark:border-white bg-zinc-100 dark:bg-zinc-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="relative flex h-3 w-3">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600"></span>
+                        </span>
+                        <span className="text-xs font-black uppercase tracking-wider text-black dark:text-white">
+                          GENERATION IN PROGRESS
+                        </span>
+                      </div>
+                      <span className="font-mono text-sm font-black text-red-600 dark:text-red-400">
+                        {progress}%
+                      </span>
+                    </div>
+
+                    {/* Progress Track */}
+                    <div className="w-full h-5 border-2 border-black dark:border-white bg-zinc-200 dark:bg-zinc-800 relative overflow-hidden p-0.5">
+                      <div
+                        className="h-full bg-red-600 transition-all duration-300 ease-out flex items-center justify-end pr-1"
+                        style={{ width: `${progress}%` }}
+                      >
+                        <div className="w-1.5 h-full bg-white opacity-80 animate-pulse"></div>
+                      </div>
+                    </div>
+
+                    {/* Phase breakdown & current status log */}
+                    <div className="space-y-2 pt-1 border-t border-dashed border-zinc-300 dark:border-zinc-700">
+                      <div className="text-[11px] font-mono font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-red-600 shrink-0" />
+                        <span className="truncate">{progressStep || "Processing..."}</span>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-1.5 text-[9px] font-mono uppercase font-bold pt-1">
+                        <div
+                          className={`p-1.5 border text-center transition-colors ${
+                            activeStage >= 1
+                              ? "border-black dark:border-white bg-black text-white dark:bg-white dark:text-black font-black"
+                              : "border-zinc-300 dark:border-zinc-700 text-zinc-400"
+                          }`}
+                        >
+                          1. Narrative (LLM)
+                        </div>
+                        <div
+                          className={`p-1.5 border text-center transition-colors ${
+                            activeStage >= 2
+                              ? "border-black dark:border-white bg-black text-white dark:bg-white dark:text-black font-black"
+                              : "border-zinc-300 dark:border-zinc-700 text-zinc-400"
+                          }`}
+                        >
+                          2. Media (GPU)
+                        </div>
+                        <div
+                          className={`p-1.5 border text-center transition-colors ${
+                            activeStage >= 3
+                              ? "border-black dark:border-white bg-black text-white dark:bg-white dark:text-black font-black"
+                              : "border-zinc-300 dark:border-zinc-700 text-zinc-400"
+                          }`}
+                        >
+                          3. Payloads
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
