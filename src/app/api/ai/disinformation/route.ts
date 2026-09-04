@@ -94,12 +94,21 @@ export async function POST(request: NextRequest) {
               const videoPrompt = disinfoResult.suggestedVideoPrompt || disinfoResult.suggestedImagePrompt;
               const primaryTarget = targetPlatforms[0] || "twitter";
 
-              // Video dimensions: Twitter 16:9 (848x480), Instagram/TikTok 9:16 vertical (480x848)
-              const vidWidth = primaryTarget === "twitter" ? 848 : 480;
-              const vidHeight = primaryTarget === "twitter" ? 480 : 848;
+              const isHD = body.videoResolution === "hd";
+              // Video dimensions:
+              // HD: Twitter 16:9 (1280x720), Instagram/TikTok 9:16 vertical (720x1280) - uses ~70GB VRAM
+              // SD: Twitter 16:9 (848x480), Instagram/TikTok 9:16 vertical (480x848) - standard fallback
+              let vidWidth = primaryTarget === "twitter" ? 848 : 480;
+              let vidHeight = primaryTarget === "twitter" ? 480 : 848;
+
+              if (isHD) {
+                vidWidth = primaryTarget === "twitter" ? 1280 : 720;
+                vidHeight = primaryTarget === "twitter" ? 720 : 1280;
+              }
 
               // Video steps: high quality (25 steps) prevents distortion and grain
               const videoSteps = body.videoQuality === "fast" ? 14 : 25;
+              const useDirectVae = body.videoVaeMode !== "tiled";
 
               const vidGen = await sparkClient.generateVideo(videoPrompt, {
                 model: "hunyuan",
@@ -108,6 +117,7 @@ export async function POST(request: NextRequest) {
                 length: 73, // ~3 seconds at 24fps
                 steps: videoSteps,
                 guidance: 3.5,
+                useDirectVae,
                 savePath,
                 timeout: 900000, // 15 minutes max
               });

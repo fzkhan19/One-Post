@@ -77,6 +77,8 @@ export default function MockNewsPage() {
   const [includeVideo, setIncludeVideo] = useState(false);
   const [mediaModel, setMediaModel] = useState<"flux" | "flux2">("flux");
   const [videoQuality, setVideoQuality] = useState<"fast" | "high">("high");
+  const [videoResolution, setVideoResolution] = useState<"hd" | "sd">("hd"); // 'hd' (720p ~70GB VRAM) vs 'sd' (480p fallback)
+  const [videoVaeMode, setVideoVaeMode] = useState<"direct" | "tiled">("direct"); // 'direct' (full-frame) vs 'tiled' (legacy fallback)
   
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -181,6 +183,8 @@ export default function MockNewsPage() {
           generateImage: includeImage,
           generateVideo: includeVideo,
           videoQuality,
+          videoResolution,
+          videoVaeMode,
           mediaModel,
         }),
       });
@@ -449,9 +453,9 @@ export default function MockNewsPage() {
                         />
                       </div>
                       {includeVideo && (
-                        <div className="space-y-1.5 pt-1">
+                        <div className="space-y-2 pt-1">
                           <div className="flex items-center gap-2 text-[10px] font-bold">
-                            <span className="text-zinc-500 uppercase">Quality:</span>
+                            <span className="text-zinc-500 uppercase">Steps:</span>
                             <button
                               type="button"
                               onClick={() => setVideoQuality("high")}
@@ -459,7 +463,7 @@ export default function MockNewsPage() {
                                 videoQuality === "high" ? "bg-black text-white dark:bg-white dark:text-black" : ""
                               }`}
                             >
-                              High Realism (25 Steps)
+                              25 Steps (HQ)
                             </button>
                             <button
                               type="button"
@@ -468,11 +472,69 @@ export default function MockNewsPage() {
                                 videoQuality === "fast" ? "bg-black text-white dark:bg-white dark:text-black" : ""
                               }`}
                             >
-                              Fast Draft (14 Steps)
+                              14 Steps (Fast)
                             </button>
                           </div>
+
+                          {/* Experimental 120GB VRAM Optimization Toggles */}
+                          <div className="p-1.5 border border-dashed border-red-500/50 bg-red-50/50 dark:bg-red-950/20 space-y-1.5">
+                            <div className="flex items-center justify-between text-[9px] font-bold text-red-600 dark:text-red-400 uppercase">
+                              <span>⚡ 120GB VRAM Optimizations (Experimental):</span>
+                            </div>
+                            
+                            <div className="flex flex-wrap items-center gap-3 text-[10px] font-bold">
+                              <div className="flex items-center gap-1">
+                                <span className="text-zinc-500 uppercase">Res:</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setVideoResolution("hd")}
+                                  className={`px-1.5 py-0.5 border border-black dark:border-white uppercase ${
+                                    videoResolution === "hd" ? "bg-red-600 text-white" : ""
+                                  }`}
+                                  title="True 720p HD (1280x720 / 720x1280) - uses ~70GB VRAM"
+                                >
+                                  HD (720p)
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setVideoResolution("sd")}
+                                  className={`px-1.5 py-0.5 border border-black dark:border-white uppercase ${
+                                    videoResolution === "sd" ? "bg-black text-white dark:bg-white dark:text-black" : ""
+                                  }`}
+                                  title="Standard 480p (848x480) - safe baseline fallback"
+                                >
+                                  SD (480p)
+                                </button>
+                              </div>
+
+                              <div className="flex items-center gap-1">
+                                <span className="text-zinc-500 uppercase">VAE:</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setVideoVaeMode("direct")}
+                                  className={`px-1.5 py-0.5 border border-black dark:border-white uppercase ${
+                                    videoVaeMode === "direct" ? "bg-red-600 text-white" : ""
+                                  }`}
+                                  title="Direct Full-Frame VAE: Decodes in single pass without tile seams"
+                                >
+                                  Direct Full
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setVideoVaeMode("tiled")}
+                                  className={`px-1.5 py-0.5 border border-black dark:border-white uppercase ${
+                                    videoVaeMode === "tiled" ? "bg-black text-white dark:bg-white dark:text-black" : ""
+                                  }`}
+                                  title="Tiled VAE (384px tiles) - safe baseline fallback"
+                                >
+                                  Tiled (Safe)
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+
                           <p className="text-[10px] font-bold text-zinc-500">
-                            Engine: Hunyuan Video 720p (DiT + LLaVA CLIP on Spark 2)
+                            Engine: Hunyuan Video (DiT + LLaVA CLIP on Spark 2 NVIDIA GB10)
                           </p>
                         </div>
                       )}

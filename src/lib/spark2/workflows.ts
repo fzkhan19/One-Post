@@ -133,6 +133,7 @@ export function setupTextToVideo(prompt: string, options?: GenerateVideoOptions)
   const height = options?.height ?? 480;
   const length = options?.length ?? 73; // ~3 seconds at 24fps
   const guidance = options?.guidance ?? 3.5; // Optimal for Hunyuan to prevent over-saturation/artifacts
+  const useDirectVae = options?.useDirectVae !== false; // Default true on 120GB Spark 2 GPU
 
   const wf = deepClone(hunyuanWf) as Record<string, any>;
 
@@ -154,10 +155,29 @@ export function setupTextToVideo(prompt: string, options?: GenerateVideoOptions)
   if (wf['26']?.inputs) {
     wf['26'].inputs.guidance = guidance;
   }
-  // Node 73: VAEDecodeTiled (larger tile_size eliminates seam line artifacts)
-  if (wf['73']?.inputs) {
-    wf['73'].inputs.tile_size = 384;
-    wf['73'].inputs.overlap = 96;
+  // Node 73: VAE Decode configuration
+  // If useDirectVae is enabled, switch to full-frame VAEDecode leveraging 120GB VRAM
+  if (wf['73']) {
+    if (useDirectVae) {
+      wf['73'].class_type = "VAEDecode";
+      wf['73'].inputs = {
+        samples: ["13", 0],
+        vae: ["10", 0]
+      };
+      if (wf['73']._meta) {
+        wf['73']._meta.title = "VAE Decode (Direct Full-Frame)";
+      }
+    } else {
+      wf['73'].class_type = "VAEDecodeTiled";
+      wf['73'].inputs = {
+        tile_size: 384,
+        overlap: 96,
+        temporal_size: 64,
+        temporal_overlap: 8,
+        samples: ["13", 0],
+        vae: ["10", 0]
+      };
+    }
   }
   // Node 25: RandomNoise seed
   if (wf['25']?.inputs) {
