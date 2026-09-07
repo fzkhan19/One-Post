@@ -116,7 +116,6 @@ export interface GenerateVideoOptions {
   length?: number;
   steps?: number;
   guidance?: number;
-  useDirectVae?: boolean;
   seed?: number;
   timeout?: number;
   onProgress?: (progress: GenerationProgress) => void;
