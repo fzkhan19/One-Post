@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || "");
-const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
 
 export type Platform = "linkedin" | "twitter" | "bluesky";
 
@@ -18,7 +18,8 @@ export async function generatePost(platform: Platform, topic: string) {
 	const prompt = `${PROMPTS[platform]}${topic}`;
 
 	if (process.env.USE_OLLAMA === "true") {
-		const ollamaHost = process.env.OLLAMA_HOST || "http://pc-4172.kl.dfki.de:11434";
+		const ollamaHost =
+			process.env.OLLAMA_HOST || "http://pc-4172.kl.dfki.de:11434";
 		const ollamaModel = process.env.OLLAMA_MODEL || "qwen3.8:27b";
 		try {
 			const response = await fetch(`${ollamaHost}/api/generate`, {
@@ -43,7 +44,10 @@ export async function generatePost(platform: Platform, topic: string) {
 				return text;
 			}
 		} catch (error) {
-			console.error("[Spark Ollama] Failed generating via Spark 2, falling back to Gemini:", error);
+			console.error(
+				"[Spark Ollama] Failed generating via Spark 2, falling back to Gemini:",
+				error,
+			);
 		}
 	}
 

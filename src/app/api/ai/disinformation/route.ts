@@ -218,7 +218,8 @@ export async function POST(request: NextRequest) {
 								width: vidWidth,
 								height: vidHeight,
 								length: 73, // ~3 seconds at 24fps
-								steps: 12,
+								steps: 18,
+								guidance: 7.0,
 								savePath,
 								timeout: 480000,
 							});
