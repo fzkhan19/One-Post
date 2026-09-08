@@ -19,7 +19,7 @@ jobs:
         run: |
           export PATH=/usr/local/bin:/home/ubuntu/.bun/bin:$PATH
           cd /home/ubuntu/One-Post
-          bun install
+          bun install --frozen-lockfile --ignore-scripts
 
       - name: Build Next.js
         run: |
