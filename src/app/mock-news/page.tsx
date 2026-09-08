@@ -303,7 +303,8 @@ export default function MockNewsPage() {
 		toast.success("Mock News JSON downloaded.");
 	};
 
-	const downloadMediaFile = (url: string, filename: string) => {
+	const downloadMediaFile = (url?: string, filename?: string) => {
+		if (!url || !filename) return;
 		const a = document.createElement("a");
 		a.href = url;
 		a.download = filename;
