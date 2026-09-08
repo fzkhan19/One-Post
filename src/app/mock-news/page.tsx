@@ -15,7 +15,9 @@ import {
 	Bookmark,
 	Check,
 	CheckCircle2,
+	Clock,
 	Copy,
+	Database,
 	Download,
 	Globe,
 	Heart,
@@ -24,12 +26,12 @@ import {
 	MessageCircle,
 	MoreHorizontal,
 	Music2,
+	RefreshCw,
 	Repeat2,
 	Share2,
-	Sliders,
 	Sparkles,
-	Terminal,
 	Video as VideoIcon,
+	Zap,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -96,6 +98,49 @@ const VECTORS: {
 	},
 ];
 
+const EXAMPLE_TOPICS: {
+	title: string;
+	topic: string;
+	vector: DisinformationVector;
+	category: string;
+}[] = [
+	{
+		title: "Digital Euro Currency Freeze",
+		topic:
+			"European Central Bank announces emergency liquidity freeze on digital euro commercial transfers",
+		vector: "fabricated_breaking_news",
+		category: "Financial / Breaking",
+	},
+	{
+		title: "Satellite Telecom Zero-Day",
+		topic:
+			"Global telecommunications alliance suppresses internal audit revealing critical zero-day in orbital routing hubs",
+		vector: "conspiracy_leak",
+		category: "Security / Covert",
+	},
+	{
+		title: "Offshore Energy Reserve Discrepancy",
+		topic:
+			"Independent audit report claims 42% of recorded national offshore wind reserve capacity is mathematically overstated",
+		vector: "misleading_statistics",
+		category: "Energy / Statistical",
+	},
+	{
+		title: "Mandatory Corporate AI Layoff Quotas",
+		topic:
+			"Leaked ministry proposal outlines mandatory workforce displacement targets for tech firms implementing automation",
+		vector: "ragebait_emotional",
+		category: "Policy / Polarization",
+	},
+	{
+		title: "Official Workplace Siesta Mandate",
+		topic:
+			"EU Commission accidentally publishes draft directive requiring certified 45-minute afternoon rest pauses in all offices",
+		vector: "satire_parody",
+		category: "Labor / Satire",
+	},
+];
+
 export default function MockNewsPage() {
 	const [topic, setTopic] = useState("");
 	const [vector, setVector] = useState<DisinformationVector>(
@@ -110,6 +155,7 @@ export default function MockNewsPage() {
 	const [includeImage, setIncludeImage] = useState(true);
 	const [includeVideo, setIncludeVideo] = useState(false);
 	const [mediaModel, setMediaModel] = useState<"flux" | "flux2">("flux");
+	const [useCache, setUseCache] = useState(true);
 
 	const [isGenerating, setIsGenerating] = useState(false);
 	const [progress, setProgress] = useState(0);
@@ -120,6 +166,8 @@ export default function MockNewsPage() {
 				image?: { url: string; filename: string; sizeKb: number } | null;
 				video?: { url: string; filename: string; sizeKb: number } | null;
 				media?: { url: string; filename: string; sizeKb: number } | null;
+				isCached?: boolean;
+				cachedAt?: number;
 		  })
 		| null
 	>(null);
@@ -146,6 +194,12 @@ export default function MockNewsPage() {
 		});
 	};
 
+	const applyExampleTopic = (example: (typeof EXAMPLE_TOPICS)[0]) => {
+		setTopic(example.topic);
+		setVector(example.vector);
+		toast.info(`Loaded scenario: "${example.title}"`);
+	};
+
 	// Query Spark status on mount
 	useEffect(() => {
 		fetch("/api/spark/status")
@@ -156,7 +210,7 @@ export default function MockNewsPage() {
 			.catch(() => {});
 	}, []);
 
-	const handleGenerate = async () => {
+	const handleGenerate = async (forceRegenerate = false) => {
 		if (!topic.trim()) {
 			toast.error("Please enter a scenario or topic prompt.");
 			return;
@@ -170,7 +224,11 @@ export default function MockNewsPage() {
 		setIsGenerating(true);
 		setProgress(5);
 		setActiveStage(1);
-		setProgressStep("Initializing scenario pipeline & prompting model...");
+		setProgressStep(
+			forceRegenerate
+				? "Bypassing cache & initializing fresh synthesis..."
+				: "Checking 30-day cache & initializing pipeline...",
+		);
 		setResult(null);
 
 		const totalEstimatedSeconds = includeVideo ? 80 : includeImage ? 16 : 6;
@@ -191,7 +249,7 @@ export default function MockNewsPage() {
 				setActiveStage(2);
 				if (includeImage) {
 					setProgressStep(
-						`Stage 2/3: Generating media asset on Spark 2 (${mediaModel === "flux2" ? "Flux.2 Dev" : "Flux Schnell"})...`,
+						`Stage 2/3: Dispatching media generation to Spark 2 (${mediaModel === "flux2" ? "Flux.2 Dev" : "Flux Schnell"})...`,
 					);
 				} else {
 					setProgressStep("Stage 2/3: Formatting virality and metadata...");
@@ -207,7 +265,6 @@ export default function MockNewsPage() {
 		}, intervalMs);
 
 		try {
-			toast.info(`Synthesizing for [${selectedPlatforms.join(", ")}]...`);
 			const response = await fetch("/api/ai/disinformation", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -219,6 +276,8 @@ export default function MockNewsPage() {
 					generateImage: includeImage,
 					generateVideo: includeVideo,
 					mediaModel,
+					useCache: forceRegenerate ? false : useCache,
+					forceRegenerate,
 				}),
 			});
 
@@ -243,7 +302,12 @@ export default function MockNewsPage() {
 				setProgressStep("Generation complete");
 				setActiveStage(3);
 				setResult(data.data);
-				toast.success("Mock news payload generated");
+
+				if (data.data.isCached) {
+					toast.success("Loaded from 30-day cache (saved GPU compute & time)!");
+				} else {
+					toast.success("Fresh mock news payload generated and cached!");
+				}
 			} else {
 				toast.error(data.error || "Failed to generate mock news.");
 			}
@@ -280,6 +344,8 @@ export default function MockNewsPage() {
 			suggestedVideoPrompt: result.suggestedVideoPrompt,
 			imageUrl: result.image?.url || null,
 			videoUrl: result.video?.url || null,
+			isCached: result.isCached || false,
+			cachedAt: result.cachedAt || null,
 			generatedAt: new Date().toISOString(),
 		};
 		const blob = new Blob([JSON.stringify(exportData, null, 2)], {
@@ -305,7 +371,7 @@ export default function MockNewsPage() {
 
 	return (
 		<div className="min-h-screen bg-zinc-50 font-sans text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100">
-			{/* Top Bar - Flat Minimal */}
+			{/* Top Bar */}
 			<header className="sticky top-0 z-30 border-zinc-200 border-b bg-white/95 backdrop-blur-xs dark:border-zinc-800 dark:bg-zinc-900/95">
 				<div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
 					<div className="flex items-center gap-3">
@@ -322,8 +388,12 @@ export default function MockNewsPage() {
 						</span>
 					</div>
 
-					{/* Spark 2 Cluster Badge */}
+					{/* Cluster & Cache Status Indicator */}
 					<div className="flex items-center gap-2 text-xs">
+						<div className="hidden items-center gap-1.5 rounded-md border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-[11px] text-zinc-500 sm:flex dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400">
+							<Database className="h-3 w-3 text-zinc-400" />
+							<span>30-Day Cache Active</span>
+						</div>
 						<div className="flex items-center gap-1.5 rounded-md border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-[11px] text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400">
 							<span
 								className={`h-2 w-2 rounded-full ${
@@ -355,6 +425,36 @@ export default function MockNewsPage() {
 						multi-platform assets to test automated content moderation and
 						detection filters.
 					</p>
+				</div>
+
+				{/* Quick Example Target Topics */}
+				<div className="space-y-2 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+					<div className="flex items-center justify-between">
+						<span className="font-medium text-xs text-zinc-700 dark:text-zinc-300">
+							Example Target Topics
+						</span>
+						<span className="text-[11px] text-zinc-400">
+							Click to quickly populate scenario and manipulation vector
+						</span>
+					</div>
+
+					<div className="flex flex-wrap gap-2 pt-1">
+						{EXAMPLE_TOPICS.map((ex) => (
+							<button
+								key={ex.title}
+								type="button"
+								onClick={() => applyExampleTopic(ex)}
+								className="group flex items-center gap-2 rounded-md border border-zinc-200 bg-zinc-50/70 px-2.5 py-1.5 text-left text-xs transition-colors hover:border-zinc-300 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-800/50 dark:hover:border-zinc-700 dark:hover:bg-zinc-800"
+							>
+								<span className="font-medium text-zinc-800 dark:text-zinc-200">
+									{ex.title}
+								</span>
+								<span className="rounded-sm bg-zinc-200 px-1 py-0.2 font-medium text-[10px] text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">
+									{ex.category}
+								</span>
+							</button>
+						))}
+					</div>
 				</div>
 
 				{/* Input & Configurations Grid */}
@@ -558,10 +658,29 @@ export default function MockNewsPage() {
 								</div>
 							</div>
 
-							{/* Primary Generate Button - Flat Solid */}
+							{/* 30-Day Cache Preference Control */}
+							<div className="space-y-1.5 border-zinc-100 border-t pt-3 dark:border-zinc-800">
+								<div className="flex items-center justify-between">
+									<span className="font-medium text-xs text-zinc-800 dark:text-zinc-200">
+										Use 30-Day Media Cache
+									</span>
+									<input
+										type="checkbox"
+										checked={useCache}
+										onChange={(e) => setUseCache(e.target.checked)}
+										className="h-4 w-4 cursor-pointer rounded border-zinc-300 text-zinc-900 accent-zinc-900 focus:ring-0 dark:border-zinc-600 dark:accent-zinc-100"
+									/>
+								</div>
+								<p className="text-[11px] text-zinc-500">
+									Reuses existing matching media files instead of re-rendering.
+									Uncheck to force fresh generation.
+								</p>
+							</div>
+
+							{/* Primary Generate Button */}
 							<button
 								type="button"
-								onClick={handleGenerate}
+								onClick={() => handleGenerate(false)}
 								disabled={isGenerating || !topic.trim()}
 								className="flex h-11 w-full items-center justify-center gap-2 rounded-md bg-zinc-900 font-medium text-white text-xs transition-colors hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
 							>
@@ -579,7 +698,7 @@ export default function MockNewsPage() {
 							</button>
 						</div>
 
-						{/* Progress Bar - Flat Minimal */}
+						{/* Progress Bar */}
 						{isGenerating && (
 							<div className="space-y-2.5 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
 								<div className="flex items-center justify-between text-xs">
@@ -600,21 +719,39 @@ export default function MockNewsPage() {
 					</div>
 				</div>
 
-				{/* Results Section - Flat Clean */}
+				{/* Results Section */}
 				{result && (
 					<div className="space-y-6 pt-4">
 						{/* Headline Banner */}
 						<div className="flex flex-col justify-between gap-4 rounded-lg border border-zinc-200 bg-white p-4 md:flex-row md:items-center dark:border-zinc-800 dark:bg-zinc-900">
 							<div className="space-y-1">
-								<span className="font-medium text-[11px] text-zinc-500 uppercase tracking-wider">
-									Synthesized Headline
-								</span>
+								<div className="flex items-center gap-2">
+									<span className="font-medium text-[11px] text-zinc-500 uppercase tracking-wider">
+										Synthesized Headline
+									</span>
+									{result.isCached && (
+										<span className="flex items-center gap-1 rounded-sm bg-emerald-500/10 px-2 py-0.5 font-medium text-[10px] text-emerald-600 dark:text-emerald-400">
+											<Zap className="h-3 w-3" /> Reused 30-Day Cached Media
+										</span>
+									)}
+								</div>
 								<h2 className="font-semibold text-lg text-zinc-900 tracking-tight dark:text-white">
 									{result.headline}
 								</h2>
 							</div>
 
-							<div className="flex shrink-0 items-center gap-2">
+							<div className="flex shrink-0 flex-wrap items-center gap-2">
+								{/* Button to Force Regenerate if Cached */}
+								{result.isCached && (
+									<button
+										type="button"
+										onClick={() => handleGenerate(true)}
+										disabled={isGenerating}
+										className="flex items-center gap-1.5 rounded-md border border-zinc-300 bg-zinc-50 px-3 py-1.5 font-medium text-xs text-zinc-800 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+									>
+										<RefreshCw className="h-3.5 w-3.5" /> Regenerate Fresh
+									</button>
+								)}
 								<button
 									type="button"
 									onClick={copyCurrentPost}
@@ -685,9 +822,16 @@ export default function MockNewsPage() {
 								{/* Image Box */}
 								<div className="space-y-2.5 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
 									<div className="flex items-center justify-between">
-										<span className="font-medium text-xs text-zinc-700 dark:text-zinc-300">
-											Generated Image Asset
-										</span>
+										<div className="flex items-center gap-2">
+											<span className="font-medium text-xs text-zinc-700 dark:text-zinc-300">
+												Generated Image Asset
+											</span>
+											{result.isCached && (
+												<span className="rounded-sm bg-zinc-100 px-1.5 py-0.5 font-mono text-[10px] text-zinc-500 dark:bg-zinc-800">
+													cached
+												</span>
+											)}
+										</div>
 										{result.image && (
 											<span className="font-mono text-[10px] text-zinc-400">
 												{result.image.sizeKb} KB
@@ -733,9 +877,16 @@ export default function MockNewsPage() {
 								{includeVideo && (
 									<div className="space-y-2.5 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
 										<div className="flex items-center justify-between">
-											<span className="font-medium text-xs text-zinc-700 dark:text-zinc-300">
-												Generated Video Asset
-											</span>
+											<div className="flex items-center gap-2">
+												<span className="font-medium text-xs text-zinc-700 dark:text-zinc-300">
+													Generated Video Asset
+												</span>
+												{result.isCached && (
+													<span className="rounded-sm bg-zinc-100 px-1.5 py-0.5 font-mono text-[10px] text-zinc-500 dark:bg-zinc-800">
+														cached
+													</span>
+												)}
+											</div>
 											{result.video && (
 												<span className="font-mono text-[10px] text-zinc-400">
 													{result.video.sizeKb} KB

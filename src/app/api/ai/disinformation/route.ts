@@ -1,141 +1,260 @@
-import { NextRequest, NextResponse } from "next/server";
-import { generateDisinformation, DisinformationVector } from "@/lib/ai/disinformation";
+import fs from "node:fs/promises";
+import path from "node:path";
+import {
+	type DisinformationVector,
+	generateDisinformation,
+} from "@/lib/ai/disinformation";
+import {
+	type MediaAssetInfo,
+	getCachedDisinfo,
+	setCachedDisinfo,
+} from "@/lib/cache/disinfoCache";
 import { Spark2Client } from "@/lib/spark2";
-import fs from "fs/promises";
-import path from "path";
+import { type NextRequest, NextResponse } from "next/server";
+
+export async function GET(request: NextRequest) {
+	const { searchParams } = new URL(request.url);
+	const topic = searchParams.get("topic") || "";
+	const vector = searchParams.get("vector") || "fabricated_breaking_news";
+	const requireImage = searchParams.get("requireImage") === "true";
+	const requireVideo = searchParams.get("requireVideo") === "true";
+
+	if (!topic) {
+		return NextResponse.json({ success: false, cached: false });
+	}
+
+	const cached = await getCachedDisinfo(
+		topic,
+		vector,
+		requireImage,
+		requireVideo,
+	);
+	if (cached) {
+		return NextResponse.json({
+			success: true,
+			cached: true,
+			data: {
+				...cached.result,
+				media: cached.image || cached.video || null,
+				image: cached.image || null,
+				video: cached.video || null,
+				isCached: true,
+				createdAt: cached.createdAt,
+				expiresAt: cached.expiresAt,
+			},
+		});
+	}
+
+	return NextResponse.json({ success: true, cached: false });
+}
 
 export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const { 
-      topic, 
-      vector = "fabricated_breaking_news", 
-      platform = "twitter",
-      platforms,
-      generateMedia = true,
-      mediaModel = "flux"
-    } = body;
+	try {
+		const body = await request.json();
+		const {
+			topic,
+			vector = "fabricated_breaking_news",
+			platform = "twitter",
+			platforms,
+			generateMedia = true,
+			mediaModel = "flux",
+			forceRegenerate = false,
+			useCache = true,
+		} = body;
 
-    const targetPlatforms = Array.isArray(platforms) && platforms.length > 0 
-      ? platforms 
-      : (Array.isArray(platform) ? platform : [platform || "twitter"]);
+		const targetPlatforms =
+			Array.isArray(platforms) && platforms.length > 0
+				? platforms
+				: Array.isArray(platform)
+					? platform
+					: [platform || "twitter"];
 
-    if (!topic) {
-      return NextResponse.json(
-        { success: false, error: "A topic prompt is required." },
-        { status: 400 }
-      );
-    }
+		if (!topic) {
+			return NextResponse.json(
+				{ success: false, error: "A topic prompt is required." },
+				{ status: 400 },
+			);
+		}
 
-    // 1. Generate Disinformation Narrative & AI Detection Metadata
-    const disinfoResult = await generateDisinformation(
-      topic,
-      vector as DisinformationVector,
-      targetPlatforms
-    );
+		const shouldGenerateImage =
+			body.generateImage !== false &&
+			(generateMedia || body.generateImage === true);
+		const shouldGenerateVideo = body.generateVideo === true;
 
-    let imageResult: { url: string; filename: string; sizeKb: number } | null = null;
-    let videoResult: { url: string; filename: string; sizeKb: number } | null = null;
+		// Check 30-Day Media & Narrative Cache
+		if (useCache && !forceRegenerate) {
+			const cached = await getCachedDisinfo(
+				topic,
+				vector,
+				shouldGenerateImage,
+				shouldGenerateVideo,
+			);
 
-    const shouldGenerateImage = body.generateImage !== false && (generateMedia || body.generateImage === true);
-    const shouldGenerateVideo = body.generateVideo === true;
+			if (cached) {
+				return NextResponse.json({
+					success: true,
+					data: {
+						...cached.result,
+						media: cached.image || cached.video || null,
+						image: cached.image || null,
+						video: cached.video || null,
+						isCached: true,
+						cachedAt: cached.createdAt,
+						expiresAt: cached.expiresAt,
+					},
+				});
+			}
+		}
 
-    if (shouldGenerateImage || shouldGenerateVideo) {
-      try {
-        const spark2Url = process.env.SPARK2_URL || "http://pc-4172.kl.dfki.de:8188";
-        const ssl = process.env.SPARK2_SSL === "true";
+		// 1. Generate Disinformation Narrative & AI Detection Metadata
+		const disinfoResult = await generateDisinformation(
+			topic,
+			vector as DisinformationVector,
+			targetPlatforms,
+		);
 
-        const sparkClient = new Spark2Client({ apiHost: spark2Url, ssl });
-        const available = await sparkClient.isAvailable();
+		let imageResult: MediaAssetInfo | null = null;
+		let videoResult: MediaAssetInfo | null = null;
 
-        if (available) {
-          const publicDir = path.join(process.cwd(), "public/generated");
-          await fs.mkdir(publicDir, { recursive: true });
+		if (shouldGenerateImage || shouldGenerateVideo) {
+			try {
+				const spark2Url =
+					process.env.SPARK2_URL || "http://pc-4172.kl.dfki.de:8188";
+				const ssl = process.env.SPARK2_SSL === "true";
 
-          // Generate Image (Flux) - Platform dimension aware
-          if (shouldGenerateImage && disinfoResult.suggestedImagePrompt) {
-            try {
-              const timestamp = Date.now();
-              const filename = `disinfo_img_${timestamp}.png`;
-              const savePath = path.join(publicDir, filename);
+				const sparkClient = new Spark2Client({ apiHost: spark2Url, ssl });
+				const available = await sparkClient.isAvailable();
 
-              const primaryTarget = targetPlatforms[0] || "twitter";
-              // Dimensions: Twitter 16:9 (1024x576), Instagram 1:1 (1024x1024), TikTok 9:16 (576x1024)
-              const imgWidth = primaryTarget === "twitter" ? 1024 : primaryTarget === "tiktok" ? 576 : 1024;
-              const imgHeight = primaryTarget === "twitter" ? 576 : primaryTarget === "tiktok" ? 1024 : 1024;
+				if (available) {
+					const publicDir = path.join(process.cwd(), "public/generated");
+					await fs.mkdir(publicDir, { recursive: true });
 
-              const gen = await sparkClient.generateImage(disinfoResult.suggestedImagePrompt, {
-                model: mediaModel === "flux2" ? "flux2" : "flux",
-                width: imgWidth,
-                height: imgHeight,
-                steps: mediaModel === "flux2" ? 20 : 4,
-                savePath,
-                timeout: 240000,
-              });
+					// Generate Image (Flux) - Platform dimension aware
+					if (shouldGenerateImage && disinfoResult.suggestedImagePrompt) {
+						try {
+							const timestamp = Date.now();
+							const filename = `disinfo_img_${timestamp}.png`;
+							const savePath = path.join(publicDir, filename);
 
-              imageResult = {
-                url: `/generated/${filename}`,
-                filename,
-                sizeKb: Math.round(gen.buffer.length / 1024),
-              };
-            } catch (imgErr) {
-              console.warn("[Disinformation API] Failed generating image:", imgErr);
-            }
-          }
+							const primaryTarget = targetPlatforms[0] || "twitter";
+							// Dimensions: Twitter 16:9 (1024x576), Instagram 1:1 (1024x1024), TikTok 9:16 (576x1024)
+							const imgWidth =
+								primaryTarget === "twitter"
+									? 1024
+									: primaryTarget === "tiktok"
+										? 576
+										: 1024;
+							const imgHeight =
+								primaryTarget === "twitter"
+									? 576
+									: primaryTarget === "tiktok"
+										? 1024
+										: 1024;
 
-          // Generate Video (Hunyuan) - Platform dimension aware
-          if (shouldGenerateVideo) {
-            try {
-              const timestamp = Date.now();
-              const filename = `disinfo_vid_${timestamp}.mp4`;
-              const savePath = path.join(publicDir, filename);
-              const videoPrompt = disinfoResult.suggestedVideoPrompt || disinfoResult.suggestedImagePrompt;
-              const primaryTarget = targetPlatforms[0] || "twitter";
+							const gen = await sparkClient.generateImage(
+								disinfoResult.suggestedImagePrompt,
+								{
+									model: mediaModel === "flux2" ? "flux2" : "flux",
+									width: imgWidth,
+									height: imgHeight,
+									steps: mediaModel === "flux2" ? 20 : 4,
+									savePath,
+									timeout: 240000,
+								},
+							);
 
-              // Video dimensions: Twitter 16:9 (848x480), Instagram/TikTok 9:16 vertical (480x848)
-              const vidWidth = primaryTarget === "twitter" ? 848 : 480;
-              const vidHeight = primaryTarget === "twitter" ? 480 : 848;
+							imageResult = {
+								url: `/generated/${filename}`,
+								filename,
+								sizeKb: Math.round(gen.buffer.length / 1024),
+							};
+						} catch (imgErr) {
+							console.warn(
+								"[Disinformation API] Failed generating image:",
+								imgErr,
+							);
+						}
+					}
 
-              const vidGen = await sparkClient.generateVideo(videoPrompt, {
-                model: "hunyuan",
-                width: vidWidth,
-                height: vidHeight,
-                length: 73, // ~3 seconds at 24fps
-                steps: 12,
-                savePath,
-                timeout: 480000,
-              });
+					// Generate Video (Hunyuan) - Platform dimension aware
+					if (shouldGenerateVideo) {
+						try {
+							const timestamp = Date.now();
+							const filename = `disinfo_vid_${timestamp}.mp4`;
+							const savePath = path.join(publicDir, filename);
+							const videoPrompt =
+								disinfoResult.suggestedVideoPrompt ||
+								disinfoResult.suggestedImagePrompt;
+							const primaryTarget = targetPlatforms[0] || "twitter";
 
-              videoResult = {
-                url: `/generated/${filename}`,
-                filename,
-                sizeKb: Math.round(vidGen.buffer.length / 1024),
-              };
-            } catch (vidErr) {
-              console.warn("[Disinformation API] Failed generating video:", vidErr);
-            }
-          }
-        }
-        sparkClient.close();
-      } catch (mediaErr) {
-        console.warn("[Disinformation API] Failed connecting to Spark 2 media cluster:", mediaErr);
-      }
-    }
+							// Video dimensions: Twitter 16:9 (848x480), Instagram/TikTok 9:16 vertical (480x848)
+							const vidWidth = primaryTarget === "twitter" ? 848 : 480;
+							const vidHeight = primaryTarget === "twitter" ? 480 : 848;
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        ...disinfoResult,
-        media: imageResult,
-        image: imageResult,
-        video: videoResult,
-      },
-    });
-  } catch (error) {
-    console.error("[Disinformation API Error]:", error);
-    return NextResponse.json(
-      { success: false, error: (error as Error).message || "Failed to generate mock news" },
-      { status: 500 }
-    );
-  }
+							const vidGen = await sparkClient.generateVideo(videoPrompt, {
+								model: "hunyuan",
+								width: vidWidth,
+								height: vidHeight,
+								length: 73, // ~3 seconds at 24fps
+								steps: 12,
+								savePath,
+								timeout: 480000,
+							});
+
+							videoResult = {
+								url: `/generated/${filename}`,
+								filename,
+								sizeKb: Math.round(vidGen.buffer.length / 1024),
+							};
+						} catch (vidErr) {
+							console.warn(
+								"[Disinformation API] Failed generating video:",
+								vidErr,
+							);
+						}
+					}
+				}
+				sparkClient.close();
+			} catch (mediaErr) {
+				console.warn(
+					"[Disinformation API] Failed connecting to Spark 2 media cluster:",
+					mediaErr,
+				);
+			}
+		}
+
+		// Persist to 30-Day Cache
+		try {
+			await setCachedDisinfo(
+				topic,
+				vector,
+				targetPlatforms,
+				disinfoResult,
+				imageResult,
+				videoResult,
+			);
+		} catch (cacheErr) {
+			console.warn("[Disinformation API] Failed to write cache:", cacheErr);
+		}
+
+		return NextResponse.json({
+			success: true,
+			data: {
+				...disinfoResult,
+				media: imageResult,
+				image: imageResult,
+				video: videoResult,
+				isCached: false,
+			},
+		});
+	} catch (error) {
+		console.error("[Disinformation API Error]:", error);
+		return NextResponse.json(
+			{
+				success: false,
+				error: (error as Error).message || "Failed to generate mock news",
+			},
+			{ status: 500 },
+		);
+	}
 }
