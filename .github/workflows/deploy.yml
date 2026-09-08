@@ -4,31 +4,32 @@ on:
   push:
     branches: [ main ]
 
+concurrency:
+  group: deploy-production
+  cancel-in-progress: true
+
 jobs:
   deploy:
-    runs-on: self-hosted  # Runs directly on the Oracle VPS — no SSH needed
+    runs-on: self-hosted  # Runs directly on the Oracle VPS
 
     steps:
-      - name: Pull latest code
+      - name: Deploy One-Post (Pull, Build, Restart)
         run: |
+          export PATH=/usr/bin:/usr/local/bin:/home/ubuntu/.bun/bin:$PATH
+          export NEXT_TELEMETRY_DISABLED=1
+          export NODE_ENV=production
           cd /home/ubuntu/One-Post
+
+          # Fast fetch & reset to latest origin
           git fetch origin main
           git reset --hard origin/main
 
-      - name: Install dependencies
-        run: |
-          export PATH=/usr/local/bin:/home/ubuntu/.bun/bin:$PATH
-          cd /home/ubuntu/One-Post
+          # Fast zero-install check
           bun install --frozen-lockfile --ignore-scripts
 
-      - name: Build Next.js
-        run: |
-          export PATH=/usr/local/bin:/home/ubuntu/.bun/bin:$PATH
-          cd /home/ubuntu/One-Post
+          # Optimized Next.js production build
           bun run build
 
-      - name: Reload PM2
-        run: |
-          export PATH=/usr/local/bin:/home/ubuntu/.bun/bin:$PATH
-          pm2 restart one-post
+          # Instant zero-downtime PM2 reload
+          pm2 reload one-post || pm2 restart one-post
           pm2 list
