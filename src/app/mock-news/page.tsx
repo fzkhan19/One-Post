@@ -325,7 +325,7 @@ export default function MockNewsPage() {
 					<div className="flex items-center gap-3">
 						<Link
 							href="/"
-							className="dark:hover:white inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 font-semibold text-xs text-zinc-600 shadow-xs transition-all hover:bg-zinc-50 hover:text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-400 dark:hover:bg-zinc-800"
+							className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 font-semibold text-xs text-zinc-600 shadow-xs transition-all hover:bg-zinc-50 hover:text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white"
 						>
 							<ArrowLeft className="h-3.5 w-3.5" />
 							<span>Back</span>
