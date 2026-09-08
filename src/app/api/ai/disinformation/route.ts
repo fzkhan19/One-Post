@@ -6,6 +6,7 @@ import {
 } from "@/lib/ai/disinformation";
 import {
 	type MediaAssetInfo,
+	clearDisinfoCache,
 	getCachedDisinfo,
 	setCachedDisinfo,
 } from "@/lib/cache/disinfoCache";
@@ -48,6 +49,22 @@ export async function GET(request: NextRequest) {
 	return NextResponse.json({ success: true, cached: false });
 }
 
+export async function DELETE() {
+	try {
+		const clearedCount = await clearDisinfoCache();
+		return NextResponse.json({
+			success: true,
+			cleared: clearedCount,
+			message: `Cleared ${clearedCount} cached entries. Fresh generations will now be stored with prompt associations.`,
+		});
+	} catch (err) {
+		return NextResponse.json(
+			{ success: false, error: (err as Error).message },
+			{ status: 500 },
+		);
+	}
+}
+
 export async function POST(request: NextRequest) {
 	try {
 		const body = await request.json();
@@ -81,7 +98,7 @@ export async function POST(request: NextRequest) {
 			(generateMedia || body.generateImage === true);
 		const shouldGenerateVideo = body.generateVideo === true;
 
-		// Check 30-Day Media & Narrative Cache
+		// 1. Check 30-Day Media & Narrative Cache if enabled and not forced
 		if (useCache && !forceRegenerate) {
 			const cached = await getCachedDisinfo(
 				topic,
@@ -106,7 +123,7 @@ export async function POST(request: NextRequest) {
 			}
 		}
 
-		// 1. Generate Disinformation Narrative & AI Detection Metadata
+		// 2. Generate Disinformation Narrative & AI Detection Metadata
 		const disinfoResult = await generateDisinformation(
 			topic,
 			vector as DisinformationVector,
@@ -116,6 +133,7 @@ export async function POST(request: NextRequest) {
 		let imageResult: MediaAssetInfo | null = null;
 		let videoResult: MediaAssetInfo | null = null;
 
+		// 3. Generate Media on Spark 2 Cluster (if requested)
 		if (shouldGenerateImage || shouldGenerateVideo) {
 			try {
 				const spark2Url =
@@ -129,7 +147,7 @@ export async function POST(request: NextRequest) {
 					const publicDir = path.join(process.cwd(), "public/generated");
 					await fs.mkdir(publicDir, { recursive: true });
 
-					// Generate Image (Flux) - Platform dimension aware
+					// A. Generate Image (Flux)
 					if (shouldGenerateImage && disinfoResult.suggestedImagePrompt) {
 						try {
 							const timestamp = Date.now();
@@ -167,6 +185,10 @@ export async function POST(request: NextRequest) {
 								url: `/generated/${filename}`,
 								filename,
 								sizeKb: Math.round(gen.buffer.length / 1024),
+								prompt: disinfoResult.suggestedImagePrompt,
+								type: "image",
+								model: mediaModel === "flux2" ? "flux2" : "flux",
+								generatedAt: timestamp,
 							};
 						} catch (imgErr) {
 							console.warn(
@@ -176,7 +198,7 @@ export async function POST(request: NextRequest) {
 						}
 					}
 
-					// Generate Video (Hunyuan) - Platform dimension aware
+					// B. Generate Video (Hunyuan)
 					if (shouldGenerateVideo) {
 						try {
 							const timestamp = Date.now();
@@ -205,6 +227,10 @@ export async function POST(request: NextRequest) {
 								url: `/generated/${filename}`,
 								filename,
 								sizeKb: Math.round(vidGen.buffer.length / 1024),
+								prompt: videoPrompt,
+								type: "video",
+								model: "hunyuan",
+								generatedAt: timestamp,
 							};
 						} catch (vidErr) {
 							console.warn(
@@ -213,6 +239,11 @@ export async function POST(request: NextRequest) {
 							);
 						}
 					}
+				} else {
+					console.warn(
+						"[Disinformation API] Spark 2 media cluster is offline or unreachable:",
+						spark2Url,
+					);
 				}
 				sparkClient.close();
 			} catch (mediaErr) {
@@ -223,7 +254,7 @@ export async function POST(request: NextRequest) {
 			}
 		}
 
-		// Persist to 30-Day Cache
+		// 4. Save newly generated entry into 30-Day Cache with Associated Prompts
 		try {
 			await setCachedDisinfo(
 				topic,
@@ -241,7 +272,7 @@ export async function POST(request: NextRequest) {
 			success: true,
 			data: {
 				...disinfoResult,
-				media: imageResult,
+				media: imageResult || videoResult || null,
 				image: imageResult,
 				video: videoResult,
 				isCached: false,

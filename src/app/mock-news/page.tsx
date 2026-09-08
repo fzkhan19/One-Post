@@ -30,6 +30,7 @@ import {
 	Repeat2,
 	Share2,
 	Sparkles,
+	Trash2,
 	Video as VideoIcon,
 	Zap,
 } from "lucide-react";
@@ -163,9 +164,27 @@ export default function MockNewsPage() {
 	const [activeStage, setActiveStage] = useState<number>(0);
 	const [result, setResult] = useState<
 		| (DisinformationResult & {
-				image?: { url: string; filename: string; sizeKb: number } | null;
-				video?: { url: string; filename: string; sizeKb: number } | null;
-				media?: { url: string; filename: string; sizeKb: number } | null;
+				image?: {
+					url: string;
+					filename: string;
+					sizeKb: number;
+					prompt?: string;
+					model?: string;
+				} | null;
+				video?: {
+					url: string;
+					filename: string;
+					sizeKb: number;
+					prompt?: string;
+					model?: string;
+				} | null;
+				media?: {
+					url: string;
+					filename: string;
+					sizeKb: number;
+					prompt?: string;
+					model?: string;
+				} | null;
 				isCached?: boolean;
 				cachedAt?: number;
 		  })
@@ -200,6 +219,8 @@ export default function MockNewsPage() {
 		toast.info(`Loaded scenario: "${example.title}"`);
 	};
 
+	const [isClearingCache, setIsClearingCache] = useState(false);
+
 	// Query Spark status on mount
 	useEffect(() => {
 		fetch("/api/spark/status")
@@ -209,6 +230,27 @@ export default function MockNewsPage() {
 			})
 			.catch(() => {});
 	}, []);
+
+	const handleClearCache = async () => {
+		if (isClearingCache) return;
+		setIsClearingCache(true);
+		try {
+			const res = await fetch("/api/ai/disinformation", { method: "DELETE" });
+			const data = await res.json();
+			if (data.success) {
+				toast.success("30-Day Media & Narrative Cache cleared successfully.");
+				if (result?.isCached) {
+					setResult(null);
+				}
+			} else {
+				toast.error(`Failed to clear cache: ${data.error || "Unknown error"}`);
+			}
+		} catch (err) {
+			toast.error("Network error while clearing cache.");
+		} finally {
+			setIsClearingCache(false);
+		}
+	};
 
 	const handleGenerate = async (forceRegenerate = false) => {
 		if (!topic.trim()) {
@@ -388,8 +430,18 @@ export default function MockNewsPage() {
 						</span>
 					</div>
 
-					{/* Cluster & Cache Status Indicator */}
+					{/* Cluster & Cache Status Indicator + Clear Cache */}
 					<div className="flex items-center gap-2 text-xs">
+						<button
+							type="button"
+							onClick={handleClearCache}
+							disabled={isClearingCache}
+							title="Clear all 30-day cached mock news media and narratives"
+							className="flex items-center gap-1.5 rounded-md border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-[11px] text-zinc-600 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:border-red-900/50 dark:hover:bg-red-950/30 dark:hover:text-red-400"
+						>
+							<Trash2 className="h-3 w-3" />
+							<span>{isClearingCache ? "Clearing..." : "Clear Cache"}</span>
+						</button>
 						<div className="hidden items-center gap-1.5 rounded-md border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-[11px] text-zinc-500 sm:flex dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400">
 							<Database className="h-3 w-3 text-zinc-400" />
 							<span>30-Day Cache Active</span>
@@ -840,8 +892,8 @@ export default function MockNewsPage() {
 									</div>
 
 									{result.image?.url ? (
-										<div className="space-y-2">
-											<div className="max-h-[200px] overflow-hidden rounded-md border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-950">
+										<div className="space-y-2.5">
+											<div className="max-h-[220px] overflow-hidden rounded-md border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-950">
 												<img
 													src={result.image.url}
 													alt="Synthesized asset"
@@ -849,7 +901,7 @@ export default function MockNewsPage() {
 												/>
 											</div>
 											<div className="flex items-center justify-between text-xs">
-												<span className="max-w-[180px] truncate text-[11px] text-zinc-500">
+												<span className="max-w-[180px] truncate font-mono text-[11px] text-zinc-500">
 													{result.image.filename}
 												</span>
 												<button
@@ -865,6 +917,45 @@ export default function MockNewsPage() {
 													Download
 												</button>
 											</div>
+											{/* Associated Generation Prompt */}
+											{(result.image.prompt || result.suggestedImagePrompt) && (
+												<div className="rounded-md border border-zinc-100 bg-zinc-50/80 p-2.5 dark:border-zinc-800/80 dark:bg-zinc-800/40">
+													<div className="mb-1 flex items-center justify-between text-[10px] text-zinc-500">
+														<span className="font-semibold uppercase tracking-wider">
+															Associated Prompt
+														</span>
+														<div className="flex items-center gap-1.5">
+															{result.image.model && (
+																<span className="rounded-sm bg-zinc-200 px-1 py-0.5 font-mono text-[9px] text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">
+																	{result.image.model === "flux2"
+																		? "Flux.2 Dev"
+																		: "Flux Schnell"}
+																</span>
+															)}
+															<button
+																type="button"
+																onClick={() => {
+																	const p =
+																		result.image?.prompt ||
+																		result.suggestedImagePrompt ||
+																		"";
+																	navigator.clipboard.writeText(p);
+																	toast.success(
+																		"Image prompt copied to clipboard",
+																	);
+																}}
+																className="flex items-center gap-1 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+															>
+																<Copy className="h-2.5 w-2.5" />
+																<span>Copy</span>
+															</button>
+														</div>
+													</div>
+													<p className="line-clamp-3 text-[11px] text-zinc-700 leading-relaxed dark:text-zinc-300">
+														{result.image.prompt || result.suggestedImagePrompt}
+													</p>
+												</div>
+											)}
 										</div>
 									) : (
 										<div className="rounded-md border border-zinc-200 border-dashed p-4 text-center text-xs text-zinc-400 dark:border-zinc-800">
@@ -895,8 +986,8 @@ export default function MockNewsPage() {
 										</div>
 
 										{result.video?.url ? (
-											<div className="space-y-2">
-												<div className="max-h-[200px] overflow-hidden rounded-md border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-950">
+											<div className="space-y-2.5">
+												<div className="max-h-[220px] overflow-hidden rounded-md border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-950">
 													<video
 														src={result.video.url}
 														controls
@@ -907,7 +998,7 @@ export default function MockNewsPage() {
 													/>
 												</div>
 												<div className="flex items-center justify-between text-xs">
-													<span className="max-w-[180px] truncate text-[11px] text-zinc-500">
+													<span className="max-w-[180px] truncate font-mono text-[11px] text-zinc-500">
 														{result.video.filename}
 													</span>
 													<button
@@ -923,6 +1014,46 @@ export default function MockNewsPage() {
 														Download
 													</button>
 												</div>
+												{/* Associated Video Generation Prompt */}
+												{(result.video.prompt ||
+													result.suggestedVideoPrompt ||
+													result.suggestedImagePrompt) && (
+													<div className="rounded-md border border-zinc-100 bg-zinc-50/80 p-2.5 dark:border-zinc-800/80 dark:bg-zinc-800/40">
+														<div className="mb-1 flex items-center justify-between text-[10px] text-zinc-500">
+															<span className="font-semibold uppercase tracking-wider">
+																Associated Prompt
+															</span>
+															<div className="flex items-center gap-1.5">
+																<span className="rounded-sm bg-zinc-200 px-1 py-0.5 font-mono text-[9px] text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">
+																	Hunyuan Video
+																</span>
+																<button
+																	type="button"
+																	onClick={() => {
+																		const p =
+																			result.video?.prompt ||
+																			result.suggestedVideoPrompt ||
+																			result.suggestedImagePrompt ||
+																			"";
+																		navigator.clipboard.writeText(p);
+																		toast.success(
+																			"Video prompt copied to clipboard",
+																		);
+																	}}
+																	className="flex items-center gap-1 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+																>
+																	<Copy className="h-2.5 w-2.5" />
+																	<span>Copy</span>
+																</button>
+															</div>
+														</div>
+														<p className="line-clamp-3 text-[11px] text-zinc-700 leading-relaxed dark:text-zinc-300">
+															{result.video.prompt ||
+																result.suggestedVideoPrompt ||
+																result.suggestedImagePrompt}
+														</p>
+													</div>
+												)}
 											</div>
 										) : (
 											<div className="rounded-md border border-zinc-200 border-dashed p-4 text-center text-xs text-zinc-400 dark:border-zinc-800">
