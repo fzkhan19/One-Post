@@ -77,8 +77,8 @@ This document serves as the persistent repository reference for One-Post, captur
   - Guidance (CFG): `6.0`
   - Negative Anatomical Conditioning: `distorted face, deformed eyes, extra limbs, bad anatomy, blur, low quality, distortion, cartoon, 3d render, watermark, deformed iris, mutated hands, artifacts`
 - **Durations & Frame Rates**:
-  - Enforced minimum **10 seconds** (`targetSec = Math.max(10, videoDuration)`).
-  - Presets: `[10s]` (161 frames at 16fps), `[12s]` (193 frames), `[15s]` (241 frames).
+  - Presets: `[5s]` (81 frames at 16fps), `[10s]` (161 frames), `[12s]` (193 frames), `[15s]` (241 frames).
+  - Enforced minimum: `Math.max(5, videoDuration)`.
 - **Dialogue-Aligned Cinematic Audio**:
   - Engine: **Stable Audio Open 1.0** (`stable_audio_open_1.0.safetensors` + `t5_base.safetensors`).
   - Loudness Normalizer: `NormalizeAudioLoudness` (`lufs: -14.0`) to guarantee broadcast audio loudness.

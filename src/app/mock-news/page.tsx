@@ -162,7 +162,7 @@ export default function MockNewsPage() {
 	const [previewPlatform, setPreviewPlatform] = useState<Platform>("twitter");
 	const [includeImage, setIncludeImage] = useState(true);
 	const [includeVideo, setIncludeVideo] = useState(true);
-	const [videoDuration, setVideoDuration] = useState<10 | 12 | 15>(10);
+	const [videoDuration, setVideoDuration] = useState<5 | 10 | 12 | 15>(5);
 	const [mediaModel, setMediaModel] = useState<"flux" | "flux2">("flux");
 
 	const [isGenerating, setIsGenerating] = useState(false);
@@ -722,7 +722,7 @@ export default function MockNewsPage() {
 													<div className="flex items-center justify-between text-[11px]">
 														<span className="text-zinc-500">Duration:</span>
 														<div className="flex rounded-md border border-zinc-200 bg-white p-0.5 dark:border-zinc-700 dark:bg-zinc-800">
-															{([10, 12, 15] as const).map((d) => (
+															{([5, 10, 12, 15] as const).map((d) => (
 																<button
 																	key={d}
 																	type="button"

@@ -173,11 +173,11 @@ export async function POST(request: NextRequest) {
 							const vidHeight = primaryTarget === "twitter" ? 480 : 832;
 
 							// Frame length calculation:
-							// Enforce at least 10 seconds per user requirement
-							const targetSec = Math.max(10, Number(videoDuration) || 10);
-							// Wan: 16fps -> 10s = 161 frames; 12s = 193 frames; 15s = 241 frames
+							// Supported durations: 5s (81 frames), 10s (161 frames), 12s (193 frames), 15s (241 frames)
+							const targetSec = Math.max(5, Number(videoDuration) || 5);
+							// Wan: 16fps -> 5s = 81 frames; 10s = 161 frames; 12s = 193 frames; 15s = 241 frames
 							const frameLength = Math.round(targetSec * 16) + 1;
-							const timeoutMs = targetSec >= 15 ? 600000 : 480000;
+							const timeoutMs = targetSec >= 15 ? 600000 : targetSec >= 10 ? 480000 : 300000;
 
 							const audioPrompt =
 								disinfoResult.suggestedAudioPrompt ||
