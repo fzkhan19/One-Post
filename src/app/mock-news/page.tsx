@@ -407,7 +407,7 @@ export default function MockNewsPage() {
 		<div className="min-h-screen bg-zinc-50 font-sans text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100">
 			{/* Top Bar */}
 			<header className="sticky top-0 z-30 border-zinc-200 border-b bg-white/95 backdrop-blur-xs dark:border-zinc-800 dark:bg-zinc-900/95">
-				<div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
+				<div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
 					<div className="flex items-center gap-3">
 						<Link
 							href="/"
@@ -473,7 +473,7 @@ export default function MockNewsPage() {
 			</header>
 
 			{/* Main Workspace */}
-			<main className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
+			<main className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
 				{activeMainTab === "gallery" ? (
 					<DisinfoRunsGallery
 						refreshSignal={galleryRefreshSignal}

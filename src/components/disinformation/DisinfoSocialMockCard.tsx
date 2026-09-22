@@ -77,9 +77,19 @@ export function DisinfoSocialMockCard({
 	const hasVideo = Boolean(video?.url);
 	const hasImage = Boolean(image?.url);
 
-	const showVideo = activeMediaType === "video" ? hasVideo : hasVideo;
+	// When activeMediaType === 'video': show video if available, fallback to image
+	// When activeMediaType === 'image': show image if available, fallback to video
+	// When activeMediaType === 'both': prefer video if available, else image
+	const showVideo =
+		activeMediaType === "image"
+			? !hasImage && hasVideo
+			: hasVideo;
 	const showImage =
-		activeMediaType === "image" ? hasImage : !showVideo && hasImage;
+		activeMediaType === "image"
+			? hasImage
+			: activeMediaType === "video"
+				? !hasVideo && hasImage
+				: !showVideo && hasImage;
 
 	// 1. TWITTER / X CARD
 	if (platform === "twitter") {
@@ -117,7 +127,7 @@ export function DisinfoSocialMockCard({
 				</p>
 
 				{(showVideo || showImage) && (
-					<div className="group relative max-h-[340px] overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900">
+					<div className="group relative aspect-video w-full overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900">
 						{showVideo && video?.url ? (
 							<>
 								<video
@@ -127,7 +137,7 @@ export function DisinfoSocialMockCard({
 									loop
 									muted={isMuted}
 									playsInline
-									className="h-full max-h-[340px] w-full object-cover"
+									className="h-full w-full object-cover"
 								/>
 								<div className="absolute right-2 bottom-2 flex items-center gap-1.5 rounded-md bg-black/60 p-1 text-white opacity-0 backdrop-blur-xs transition-opacity group-hover:opacity-100">
 									<button
@@ -164,7 +174,7 @@ export function DisinfoSocialMockCard({
 								<img
 									src={image.url}
 									alt="Twitter attachment"
-									className="h-full max-h-[340px] w-full object-cover"
+									className="h-full w-full object-cover"
 								/>
 								<div className="absolute top-2 left-2 rounded bg-black/60 px-1.5 py-0.5 font-mono text-[9px] text-white uppercase tracking-wider">
 									Image

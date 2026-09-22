@@ -165,8 +165,8 @@ export function DisinfoRunsGallery({
 
 			{/* Main Grid: Sidebar Runs List + Main Stage */}
 			<div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-				{/* Left Sidebar: Runs Batch List (4 cols) */}
-				<div className="space-y-3 lg:col-span-4">
+				{/* Left Sidebar: Runs Batch List (3 cols on desktop for wider stage) */}
+				<div className="space-y-3 lg:col-span-3">
 					<div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
 						<div className="flex items-center justify-between pb-3">
 							<span className="font-semibold text-xs text-zinc-900 dark:text-zinc-100">
@@ -238,6 +238,17 @@ export function DisinfoRunsGallery({
 												</span>
 											</div>
 
+											{/* Thumbnail Preview if Image Available */}
+											{run.image?.url && (
+												<div className="mt-2 h-14 w-full overflow-hidden rounded border border-zinc-200/50 bg-black/5 dark:border-zinc-700/50">
+													<img
+														src={run.image.url}
+														alt={run.runId}
+														className="h-full w-full object-cover"
+													/>
+												</div>
+											)}
+
 											<p
 												className={`mt-1.5 line-clamp-2 text-xs leading-snug ${
 													isSelected
@@ -294,8 +305,8 @@ export function DisinfoRunsGallery({
 					</div>
 				</div>
 
-				{/* Right Main Stage: Active Run Details & Authentic Feed Mock Cards (8 cols) */}
-				<div className="space-y-5 lg:col-span-8">
+				{/* Right Main Stage: Active Run Details & Authentic Feed Mock Cards (9 cols) */}
+				<div className="space-y-5 lg:col-span-9">
 					{activeRun ? (
 						<>
 							{/* Active Run Overview Card */}
@@ -462,6 +473,102 @@ export function DisinfoRunsGallery({
 										</p>
 									</div>
 								</div>
+
+								{/* Direct Media Assets Section (Image & Video side-by-side) */}
+								{(activeRun.image?.url || activeRun.video?.url) && (
+									<div className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+										<div className="mb-3 flex items-center justify-between border-zinc-100 border-b pb-2.5 dark:border-zinc-800">
+											<div className="flex items-center gap-2">
+												<span className="font-semibold text-xs text-zinc-900 uppercase tracking-wider dark:text-zinc-100">
+													Generated Assets Inspection
+												</span>
+												<span className="text-[11px] text-zinc-400">
+													Direct files generated on Spark 2 GPU
+												</span>
+											</div>
+										</div>
+
+										<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+											{/* Image Asset Card */}
+											{activeRun.image?.url ? (
+												<div className="space-y-2 rounded-lg border border-zinc-200 bg-zinc-50/50 p-3 dark:border-zinc-800 dark:bg-zinc-800/30">
+													<div className="flex items-center justify-between text-xs">
+														<span className="flex items-center gap-1.5 font-medium text-zinc-800 dark:text-zinc-200">
+															<ImageIcon className="h-3.5 w-3.5 text-blue-500" />
+															Image Asset ({activeRun.image.model || "flux"})
+														</span>
+														<button
+															type="button"
+															onClick={() =>
+																downloadFile(
+																	activeRun.image?.url,
+																	activeRun.image?.filename,
+																)
+															}
+															className="flex items-center gap-1 rounded border border-zinc-200 bg-white px-2 py-0.5 text-[11px] text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+														>
+															<Download className="h-3 w-3" />
+															Download ({activeRun.image.sizeKb} KB)
+														</button>
+													</div>
+													<div className="group relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-md border border-zinc-200 bg-black/5 dark:border-zinc-700">
+														<img
+															src={activeRun.image.url}
+															alt={activeRun.topic}
+															className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
+														/>
+													</div>
+												</div>
+											) : (
+												<div className="flex aspect-video items-center justify-center rounded-lg border border-zinc-200 border-dashed text-xs text-zinc-400 dark:border-zinc-800">
+													No image asset recorded for this run
+												</div>
+											)}
+
+											{/* Video Asset Card */}
+											{activeRun.video?.url ? (
+												<div className="space-y-2 rounded-lg border border-zinc-200 bg-zinc-50/50 p-3 dark:border-zinc-800 dark:bg-zinc-800/30">
+													<div className="flex items-center justify-between text-xs">
+														<span className="flex items-center gap-1.5 font-medium text-zinc-800 dark:text-zinc-200">
+															<VideoIcon className="h-3.5 w-3.5 text-purple-500" />
+															Video Asset ({activeRun.video.model || "wan22"})
+														</span>
+														<button
+															type="button"
+															onClick={() =>
+																downloadFile(
+																	activeRun.video?.url,
+																	activeRun.video?.filename,
+																)
+															}
+															className="flex items-center gap-1 rounded border border-zinc-200 bg-white px-2 py-0.5 text-[11px] text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+														>
+															<Download className="h-3 w-3" />
+															Download ({activeRun.video.sizeKb} KB)
+														</button>
+													</div>
+													<div className="aspect-video w-full overflow-hidden rounded-md border border-zinc-200 bg-black dark:border-zinc-700">
+														{/* biome-ignore lint/a11y/useMediaCaption: Generated synthetic video */}
+														<video
+															src={activeRun.video.url}
+															controls
+															loop
+															playsInline
+															onPlay={(e) => {
+																e.currentTarget.volume = 0.5;
+															}}
+															className="h-full w-full object-contain"
+														/>
+													</div>
+												</div>
+											) : (
+												<div className="flex aspect-video items-center justify-center rounded-lg border border-zinc-200 border-dashed text-xs text-zinc-400 dark:border-zinc-800">
+													No video asset recorded for this run
+												</div>
+											)}
+										</div>
+									</div>
+								)}
 							</div>
 
 							{/* Social Feeds Mock Display Container */}
@@ -477,9 +584,9 @@ export function DisinfoRunsGallery({
 
 								{/* Mock cards rendered side-by-side or individually */}
 								{activeTabPlatform === "all" ? (
-									<div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+									<div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2 2xl:grid-cols-3">
 										{/* 1. TWITTER / X CARD */}
-										<div className="flex flex-col items-center space-y-2">
+										<div className="flex w-full flex-col items-center space-y-2">
 											<div className="font-semibold text-xs text-zinc-500 uppercase tracking-wider">
 												𝕏 Twitter Mock
 											</div>
@@ -494,7 +601,7 @@ export function DisinfoRunsGallery({
 										</div>
 
 										{/* 2. INSTAGRAM CARD */}
-										<div className="flex flex-col items-center space-y-2">
+										<div className="flex w-full flex-col items-center space-y-2">
 											<div className="font-semibold text-xs text-zinc-500 uppercase tracking-wider">
 												Instagram Feed Mock
 											</div>
@@ -509,7 +616,7 @@ export function DisinfoRunsGallery({
 										</div>
 
 										{/* 3. TIKTOK CARD */}
-										<div className="flex flex-col items-center space-y-2">
+										<div className="flex w-full flex-col items-center space-y-2 lg:col-span-2 2xl:col-span-1">
 											<div className="font-semibold text-xs text-zinc-500 uppercase tracking-wider">
 												TikTok Vertical Mock
 											</div>
