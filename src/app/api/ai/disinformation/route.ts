@@ -6,12 +6,9 @@ import {
 } from "@/lib/ai/disinformation";
 import {
 	type MediaAssetInfo,
-	clearDisinfoCache,
 	clearDisinfoRuns,
-	getCachedDisinfo,
 	getDisinfoRuns,
 	recordDisinfoRunBatch,
-	setCachedDisinfo,
 } from "@/lib/cache/disinfoCache";
 import { Spark2Client } from "@/lib/spark2";
 import { type NextRequest, NextResponse } from "next/server";
@@ -20,8 +17,8 @@ export async function GET(request: NextRequest) {
 	const { searchParams } = new URL(request.url);
 	const action = searchParams.get("action");
 
-	// If requesting runs history for the batch gallery
-	if (action === "runs" || action === "gallery") {
+	// Return runs history for the batch gallery
+	if (action === "runs" || action === "gallery" || !action) {
 		const runs = await getDisinfoRuns();
 		// Return latest runs first
 		const sorted = [...runs].sort(
@@ -33,59 +30,16 @@ export async function GET(request: NextRequest) {
 		});
 	}
 
-	const topic = searchParams.get("topic") || "";
-	const vector = searchParams.get("vector") || "fabricated_breaking_news";
-	const requireImage = searchParams.get("requireImage") === "true";
-	const requireVideo = searchParams.get("requireVideo") === "true";
-
-	if (!topic) {
-		return NextResponse.json({ success: false, cached: false });
-	}
-
-	const cached = await getCachedDisinfo(
-		topic,
-		vector,
-		requireImage,
-		requireVideo,
-	);
-	if (cached) {
-		return NextResponse.json({
-			success: true,
-			cached: true,
-			data: {
-				...cached.result,
-				media: cached.image || cached.video || null,
-				image: cached.image || null,
-				video: cached.video || null,
-				isCached: true,
-				createdAt: cached.createdAt,
-				expiresAt: cached.expiresAt,
-			},
-		});
-	}
-
-	return NextResponse.json({ success: true, cached: false });
+	return NextResponse.json({ success: true, runs: [] });
 }
 
 export async function DELETE(request: NextRequest) {
 	try {
-		const { searchParams } = new URL(request.url);
-		const target = searchParams.get("target");
-
-		if (target === "runs") {
-			const clearedRuns = await clearDisinfoRuns();
-			return NextResponse.json({
-				success: true,
-				cleared: clearedRuns,
-				message: `Cleared ${clearedRuns} run batches.`,
-			});
-		}
-
-		const clearedCount = await clearDisinfoCache();
+		const clearedRuns = await clearDisinfoRuns();
 		return NextResponse.json({
 			success: true,
-			cleared: clearedCount,
-			message: `Cleared ${clearedCount} cached entries. Fresh generations will now be stored with prompt associations.`,
+			cleared: clearedRuns,
+			message: `Cleared ${clearedRuns} run batches.`,
 		});
 	} catch (err) {
 		return NextResponse.json(
@@ -107,8 +61,6 @@ export async function POST(request: NextRequest) {
 			mediaModel = "flux",
 			videoModel = "wan22",
 			videoDuration = 10,
-			forceRegenerate = false,
-			useCache = true,
 		} = body;
 
 		const targetPlatforms =
@@ -130,32 +82,7 @@ export async function POST(request: NextRequest) {
 			(generateMedia || body.generateImage === true);
 		const shouldGenerateVideo = body.generateVideo === true;
 
-		// 1. Check 30-Day Media & Narrative Cache if enabled and not forced
-		if (useCache && !forceRegenerate) {
-			const cached = await getCachedDisinfo(
-				topic,
-				vector,
-				shouldGenerateImage,
-				shouldGenerateVideo,
-			);
-
-			if (cached) {
-				return NextResponse.json({
-					success: true,
-					data: {
-						...cached.result,
-						media: cached.image || cached.video || null,
-						image: cached.image || null,
-						video: cached.video || null,
-						isCached: true,
-						cachedAt: cached.createdAt,
-						expiresAt: cached.expiresAt,
-					},
-				});
-			}
-		}
-
-		// 2. Generate Disinformation Narrative & AI Detection Metadata
+		// 1. Generate Disinformation Narrative & AI Detection Metadata
 		const disinfoResult = await generateDisinformation(
 			topic,
 			vector as DisinformationVector,
@@ -298,21 +225,7 @@ export async function POST(request: NextRequest) {
 			}
 		}
 
-		// 4. Save newly generated entry into 30-Day Cache with Associated Prompts
-		try {
-			await setCachedDisinfo(
-				topic,
-				vector,
-				targetPlatforms,
-				disinfoResult,
-				imageResult,
-				videoResult,
-			);
-		} catch (cacheErr) {
-			console.warn("[Disinformation API] Failed to write cache:", cacheErr);
-		}
-
-		// 5. Record run batch into persistent runs history (e.g. run-1, run-2...)
+		// 3. Record run batch into persistent runs history (e.g. run-1, run-2...)
 		let runBatch = null;
 		try {
 			const platformImages: Partial<
@@ -354,7 +267,6 @@ export async function POST(request: NextRequest) {
 				image: imageResult,
 				video: videoResult,
 				runBatch,
-				isCached: false,
 			},
 		});
 	} catch (error) {

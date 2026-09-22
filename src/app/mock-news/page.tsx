@@ -19,7 +19,6 @@ import {
 	CheckCircle2,
 	Clock,
 	Copy,
-	Database,
 	Download,
 	Globe,
 	Heart,
@@ -33,7 +32,6 @@ import {
 	Repeat2,
 	Share2,
 	Sparkles,
-	Trash2,
 	Video as VideoIcon,
 	Zap,
 } from "lucide-react";
@@ -166,7 +164,6 @@ export default function MockNewsPage() {
 	const [includeVideo, setIncludeVideo] = useState(true);
 	const [videoDuration, setVideoDuration] = useState<10 | 12 | 15>(10);
 	const [mediaModel, setMediaModel] = useState<"flux" | "flux2">("flux");
-	const [useCache, setUseCache] = useState(true);
 
 	const [isGenerating, setIsGenerating] = useState(false);
 	const [progress, setProgress] = useState(0);
@@ -195,8 +192,6 @@ export default function MockNewsPage() {
 					prompt?: string;
 					model?: string;
 				} | null;
-				isCached?: boolean;
-				cachedAt?: number;
 		  })
 		| null
 	>(null);
@@ -229,8 +224,6 @@ export default function MockNewsPage() {
 		toast.info(`Loaded scenario: "${example.title}"`);
 	};
 
-	const [isClearingCache, setIsClearingCache] = useState(false);
-
 	// Query Spark status and runs count on mount
 	// biome-ignore lint/correctness/useExhaustiveDependencies: galleryRefreshSignal triggers refetch on new runs
 	useEffect(() => {
@@ -251,28 +244,7 @@ export default function MockNewsPage() {
 			.catch(() => {});
 	}, [galleryRefreshSignal]);
 
-	const handleClearCache = async () => {
-		if (isClearingCache) return;
-		setIsClearingCache(true);
-		try {
-			const res = await fetch("/api/ai/disinformation", { method: "DELETE" });
-			const data = await res.json();
-			if (data.success) {
-				toast.success("30-Day Media & Narrative Cache cleared successfully.");
-				if (result?.isCached) {
-					setResult(null);
-				}
-			} else {
-				toast.error(`Failed to clear cache: ${data.error || "Unknown error"}`);
-			}
-		} catch (err) {
-			toast.error("Network error while clearing cache.");
-		} finally {
-			setIsClearingCache(false);
-		}
-	};
-
-	const handleGenerate = async (forceRegenerate = false) => {
+	const handleGenerate = async () => {
 		if (!topic.trim()) {
 			toast.error("Please enter a scenario or topic prompt.");
 			return;
@@ -286,11 +258,7 @@ export default function MockNewsPage() {
 		setIsGenerating(true);
 		setProgress(5);
 		setActiveStage(1);
-		setProgressStep(
-			forceRegenerate
-				? "Bypassing cache & initializing fresh synthesis..."
-				: "Checking 30-day cache & initializing pipeline...",
-		);
+		setProgressStep("Initializing fresh disinformation synthesis pipeline...");
 		setResult(null);
 
 		const totalEstimatedSeconds = includeVideo
@@ -345,8 +313,6 @@ export default function MockNewsPage() {
 					generateVideo: includeVideo,
 					videoDuration,
 					mediaModel,
-					useCache: forceRegenerate ? false : useCache,
-					forceRegenerate,
 				}),
 			});
 
@@ -372,13 +338,9 @@ export default function MockNewsPage() {
 				setActiveStage(3);
 				setResult(data.data);
 
-				if (data.data.isCached) {
-					toast.success("Loaded from 30-day cache (saved GPU compute & time)!");
-				} else {
-					toast.success(
-						"Fresh mock news payload generated and recorded as a new run batch!",
-					);
-				}
+				toast.success(
+					"Fresh mock news payload generated and recorded as a new run batch!",
+				);
 				setGalleryRefreshSignal((prev) => prev + 1);
 			} else {
 				toast.error(data.error || "Failed to generate mock news.");
@@ -416,8 +378,6 @@ export default function MockNewsPage() {
 			suggestedVideoPrompt: result.suggestedVideoPrompt,
 			imageUrl: result.image?.url || null,
 			videoUrl: result.video?.url || null,
-			isCached: result.isCached || false,
-			cachedAt: result.cachedAt || null,
 			generatedAt: new Date().toISOString(),
 		};
 		const blob = new Blob([JSON.stringify(exportData, null, 2)], {
@@ -489,22 +449,8 @@ export default function MockNewsPage() {
 						</div>
 					</div>
 
-					{/* Cluster & Cache Status Indicator + Clear Cache */}
+					{/* Cluster Status Indicator */}
 					<div className="flex items-center gap-2 text-xs">
-						<button
-							type="button"
-							onClick={handleClearCache}
-							disabled={isClearingCache}
-							title="Clear all 30-day cached mock news media and narratives"
-							className="flex items-center gap-1.5 rounded-md border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-[11px] text-zinc-600 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:border-red-900/50 dark:hover:bg-red-950/30 dark:hover:text-red-400"
-						>
-							<Trash2 className="h-3 w-3" />
-							<span>{isClearingCache ? "Clearing..." : "Clear Cache"}</span>
-						</button>
-						<div className="hidden items-center gap-1.5 rounded-md border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-[11px] text-zinc-500 sm:flex dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400">
-							<Database className="h-3 w-3 text-zinc-400" />
-							<span>30-Day Cache Active</span>
-						</div>
 						<div className="flex items-center gap-1.5 rounded-md border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-[11px] text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400">
 							<span
 								className={`h-2 w-2 rounded-full ${
@@ -801,29 +747,10 @@ export default function MockNewsPage() {
 										</div>
 									</div>
 
-									{/* 30-Day Cache Preference Control */}
-									<div className="space-y-1.5 border-zinc-100 border-t pt-3 dark:border-zinc-800">
-										<div className="flex items-center justify-between">
-											<span className="font-medium text-xs text-zinc-800 dark:text-zinc-200">
-												Use 30-Day Media Cache
-											</span>
-											<input
-												type="checkbox"
-												checked={useCache}
-												onChange={(e) => setUseCache(e.target.checked)}
-												className="h-4 w-4 cursor-pointer rounded border-zinc-300 text-zinc-900 accent-zinc-900 focus:ring-0 dark:border-zinc-600 dark:accent-zinc-100"
-											/>
-										</div>
-										<p className="text-[11px] text-zinc-500">
-											Reuses existing matching media files instead of
-											re-rendering. Uncheck to force fresh generation.
-										</p>
-									</div>
-
 									{/* Primary Generate Button */}
 									<button
 										type="button"
-										onClick={() => handleGenerate(false)}
+										onClick={() => handleGenerate()}
 										disabled={isGenerating || !topic.trim()}
 										className="flex h-11 w-full items-center justify-center gap-2 rounded-md bg-zinc-900 font-medium text-white text-xs transition-colors hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
 									>
@@ -874,11 +801,6 @@ export default function MockNewsPage() {
 											<span className="font-medium text-[11px] text-zinc-500 uppercase tracking-wider">
 												Synthesized Headline
 											</span>
-											{result.isCached && (
-												<span className="flex items-center gap-1 rounded-sm bg-emerald-500/10 px-2 py-0.5 font-medium text-[10px] text-emerald-600 dark:text-emerald-400">
-													<Zap className="h-3 w-3" /> Reused 30-Day Cached Media
-												</span>
-											)}
 										</div>
 										<h2 className="font-semibold text-lg text-zinc-900 tracking-tight dark:text-white">
 											{result.headline}
@@ -886,17 +808,6 @@ export default function MockNewsPage() {
 									</div>
 
 									<div className="flex shrink-0 flex-wrap items-center gap-2">
-										{/* Button to Force Regenerate if Cached */}
-										{result.isCached && (
-											<button
-												type="button"
-												onClick={() => handleGenerate(true)}
-												disabled={isGenerating}
-												className="flex items-center gap-1.5 rounded-md border border-zinc-300 bg-zinc-50 px-3 py-1.5 font-medium text-xs text-zinc-800 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
-											>
-												<RefreshCw className="h-3.5 w-3.5" /> Regenerate Fresh
-											</button>
-										)}
 										<button
 											type="button"
 											onClick={copyCurrentPost}
@@ -967,16 +878,9 @@ export default function MockNewsPage() {
 										{/* Image Box */}
 										<div className="space-y-2.5 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
 											<div className="flex items-center justify-between">
-												<div className="flex items-center gap-2">
-													<span className="font-medium text-xs text-zinc-700 dark:text-zinc-300">
-														Generated Image Asset
-													</span>
-													{result.isCached && (
-														<span className="rounded-sm bg-zinc-100 px-1.5 py-0.5 font-mono text-[10px] text-zinc-500 dark:bg-zinc-800">
-															cached
-														</span>
-													)}
-												</div>
+												<span className="font-medium text-xs text-zinc-700 dark:text-zinc-300">
+													Generated Image Asset
+												</span>
 												{result.image && (
 													<span className="font-mono text-[10px] text-zinc-400">
 														{result.image.sizeKb} KB
@@ -1063,16 +967,9 @@ export default function MockNewsPage() {
 										{includeVideo && (
 											<div className="space-y-2.5 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
 												<div className="flex items-center justify-between">
-													<div className="flex items-center gap-2">
-														<span className="font-medium text-xs text-zinc-700 dark:text-zinc-300">
-															Generated Video Asset
-														</span>
-														{result.isCached && (
-															<span className="rounded-sm bg-zinc-100 px-1.5 py-0.5 font-mono text-[10px] text-zinc-500 dark:bg-zinc-800">
-																cached
-															</span>
-														)}
-													</div>
+													<span className="font-medium text-xs text-zinc-700 dark:text-zinc-300">
+														Generated Video Asset
+													</span>
 													{result.video && (
 														<span className="font-mono text-[10px] text-zinc-400">
 															{result.video.sizeKb} KB
