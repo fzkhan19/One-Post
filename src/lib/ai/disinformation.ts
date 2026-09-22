@@ -115,7 +115,8 @@ STRICT PROMPT ENGINEERING GUIDELINES FOR THE GENERATION ENGINES:
      [Camera Movement] + [Primary Subject & Setting directly depicting ${topic}] + [Continuous Temporal Motion / Action] + [Cinematic Lighting & Atmosphere].
    - EXPLICIT CAMERA MOVEMENT: Specify continuous cinematic motion: e.g. "Slow forward camera dolly tracking shot", "Smooth low-angle pan", "Handheld documentary camera following...", "Subtle arc shot circling...".
    - EXPLICIT TEMPORAL ACTION: Describe what physically moves across the 10-15 second duration: e.g. "spokesperson sternly leans toward the podium microphone, glancing at briefing notes as camera shutters flash in the background", or "financial traders urgently gather around a blinking terminal displaying alert graphs as digital tickers stream overhead".
-   - HIGH REALISM & ANATOMY: Insist on natural physical motion, authentic editorial newsroom/field acoustics, and high-fidelity textures.
+   - CRITICAL FONT / TEXT RULE FOR VIDEO DIFFUSION: DO NOT prompt the video model to render long sentences, detailed paragraphs, or specific text banners inside the video frames. Diffusion models cannot spell complex in-video text cleanly and produce scuffed, garbled, glitchy fonts. Focus the video prompt strictly on realistic people, locations, objects, body language, screens with abstract graphical charts/heatmaps/visual alert icons, camera motion, and cinematic atmospheric lighting.
+   - HIGH REALISM & ANATOMY: Insist on natural physical motion, authentic editorial newsroom/field aesthetics, and high-fidelity textures without anatomical distortions.
 
 3. "suggestedAudioPrompt" (Tailored for Stable Audio Open 1.0):
    - Must be natural, dialogue-centric spoken statement or press conference address reflecting "${topic}".

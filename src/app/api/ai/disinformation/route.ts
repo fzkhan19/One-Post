@@ -24,7 +24,9 @@ export async function GET(request: NextRequest) {
 	if (action === "runs" || action === "gallery") {
 		const runs = await getDisinfoRuns();
 		// Return latest runs first
-		const sorted = [...runs].sort((a, b) => (b.runIndex || 0) - (a.runIndex || 0));
+		const sorted = [...runs].sort(
+			(a, b) => (b.runIndex || 0) - (a.runIndex || 0),
+		);
 		return NextResponse.json({
 			success: true,
 			runs: sorted,
@@ -259,7 +261,7 @@ export async function POST(request: NextRequest) {
 								width: vidWidth,
 								height: vidHeight,
 								length: frameLength,
-								steps: 16,
+								steps: 20,
 								audioPrompt,
 								savePath,
 								timeout: timeoutMs,
@@ -313,8 +315,12 @@ export async function POST(request: NextRequest) {
 		// 5. Record run batch into persistent runs history (e.g. run-1, run-2...)
 		let runBatch = null;
 		try {
-			const platformImages: Partial<Record<"twitter" | "instagram" | "tiktok", MediaAssetInfo | null>> = {};
-			const platformVideos: Partial<Record<"twitter" | "instagram" | "tiktok", MediaAssetInfo | null>> = {};
+			const platformImages: Partial<
+				Record<"twitter" | "instagram" | "tiktok", MediaAssetInfo | null>
+			> = {};
+			const platformVideos: Partial<
+				Record<"twitter" | "instagram" | "tiktok", MediaAssetInfo | null>
+			> = {};
 
 			for (const p of ["twitter", "instagram", "tiktok"] as const) {
 				if (targetPlatforms.includes(p)) {
@@ -334,7 +340,10 @@ export async function POST(request: NextRequest) {
 				video: videoResult,
 			});
 		} catch (batchErr) {
-			console.warn("[Disinformation API] Failed to record run batch:", batchErr);
+			console.warn(
+				"[Disinformation API] Failed to record run batch:",
+				batchErr,
+			);
 		}
 
 		return NextResponse.json({

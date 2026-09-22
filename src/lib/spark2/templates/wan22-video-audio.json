@@ -39,7 +39,7 @@
   "6": {
     "class_type": "CLIPTextEncode",
     "inputs": {
-      "text": "distorted face, deformed eyes, extra limbs, bad anatomy, blur, low quality, distortion, cartoon, 3d render, watermark, deformed iris, mutated hands, artifacts",
+      "text": "scuffed text, garbled text, distorted font, unreadable typography, illegible letters, misspelled words, glitch text, gibberish captions, bad text rendering, distorted face, deformed eyes, extra limbs, bad anatomy, blur, low quality, distortion, cartoon, 3d render, watermark, deformed iris, mutated hands, artifacts, flickering, noise",
       "clip": ["2", 0]
     }
   },
@@ -48,8 +48,8 @@
     "inputs": {
       "model": ["1", 0],
       "seed": 42,
-      "steps": 16,
-      "cfg": 6.0,
+      "steps": 20,
+      "cfg": 5.0,
       "sampler_name": "uni_pc",
       "scheduler": "simple",
       "positive": ["5", 0],
