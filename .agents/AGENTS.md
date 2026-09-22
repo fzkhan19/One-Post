@@ -22,6 +22,11 @@ This document serves as the persistent repository reference for One-Post, captur
 - **ComfyUI Server**: `http://pc-4172.kl.dfki.de:8188` (WebSocket: `ws://pc-4172.kl.dfki.de:8188/ws`)
 - **Ollama LLM Server**: `http://pc-4172.kl.dfki.de:11434`
   - Active Models: `qwen3.8:27b`, `mistral-small:24b`
+- **Network Topology / VPS Tunnel**:
+  - The DFKI GPU cluster (`pc-4172.kl.dfki.de`) is on the internal DFKI university network and cannot be reached directly from the Oracle Cloud public VPS.
+  - An SSH reverse tunnel is forwarded to the VPS:
+    `ssh -f -N -T -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -i "C:\Users\Khan\Downloads\ssh-key-2026-09-03.key" -R 8188:pc-4172.kl.dfki.de:8188 -R 11434:pc-4172.kl.dfki.de:11434 ubuntu@92.5.50.60`
+  - On the VPS, `.env.local` routes to `SPARK2_URL=http://localhost:8188` and `OLLAMA_HOST=http://localhost:11434`.
 - **Hardware Architecture**: NVIDIA GB10 Blackwell GPU / unified memory architecture (128 GB VRAM)
 - **Thermal & Memory Safety Limit**: **Max 40 GB VRAM consumption**. All active production workflows (Flux, Wan 2.2, Stable Audio) operate within **1.6 GB to 3.2 GB peak PyTorch VRAM** (< 8% of the hardware limit).
 
