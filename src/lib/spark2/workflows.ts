@@ -162,7 +162,7 @@ export function setupTextToVideo(
 		// Audio prompt & duration (Node 13: Stable Audio positive prompt)
 		const audioPrompt =
 			options?.audioPrompt ||
-			`Dramatic cinematic breaking news broadcast intro, deep bass riser, tense orchestral strings score, authentic spokesperson dialogue announcement into press microphone: "${prompt}", professional television news production sound design`;
+			`Professional broadcast television news intro theme with tense orchestral motif and subtle electronic percussion, layered with an authoritative newsroom anchor speaking clearly into studio microphone: "${prompt}", pristine broadcast acoustics, polished television network sound production`;
 		if (wf["13"]?.inputs) {
 			wf["13"].inputs.text = audioPrompt;
 		}

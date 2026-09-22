@@ -119,9 +119,16 @@ STRICT PROMPT ENGINEERING GUIDELINES FOR THE GENERATION ENGINES:
    - HIGH REALISM & ANATOMY: Insist on natural physical motion, authentic editorial newsroom/field aesthetics, and high-fidelity textures without anatomical distortions.
 
 3. "suggestedAudioPrompt" (Tailored for Stable Audio Open 1.0):
-   - You MUST generate a rich, layered cinematic audio cue combining tense broadcast orchestral score and clear spokesperson dialogue specifically citing "${topic}".
-   - Format: "Dramatic cinematic news broadcast score, low sub bass riser, tense orchestral strings and percussion swell, professional newsroom sound design, layered with urgent spokesperson dialogue announcement speaking firmly into podium microphone: '[1-2 sentence spoken announcement about ${topic}]', authentic broadcast television acoustics, high production value trailer audio".
-   - DO NOT make it purely silent or ambient. Include both dramatic cinematic instrumentation and spoken dialogue.
+   - You MUST generate an authentic, professional television broadcast news audio cue that directly matches the specific subject and mood of "${topic}".
+   - ACOUSTIC ARCHITECTURE:
+     1. Broadcast Theme & Sound Design: A professional, polished 24-hour news network audio signature (e.g. sharp urgent synth brass stabs or low orchestral strings motif, subtle broadcast room ambiance, television studio soundstage reverberation).
+     2. Spoken Dialogue / Newsroom Address: Direct, articulate spokesperson or news anchor dialogue reading a concise, urgent statement that directly quotes the breaking development for "${topic}".
+   - STRUCTURE FORMULA:
+     "Professional broadcast television news intro theme with tense orchestral motif and subtle electronic percussion, layered with an authoritative newsroom anchor speaking clearly into studio microphone: '[Specific 1-2 sentence spoken announcement addressing ${topic}]', pristine broadcast acoustics, polished television network sound production".
+   - CRITICAL QUALITY RULES:
+     - Must directly quote or announce the specific events of "${topic}".
+     - Keep the spoken quote concise (under 25 words) so speech cadence is natural and clear over 10-15 seconds.
+     - Avoid chaotic sound effects, muddled noise, or generic action movie cliches.
 
 Respond ONLY with a valid, raw JSON object (no markdown code blocks, no backticks, no explanatory text, no <think>...</think> tags).
 The JSON must follow this exact structure:
@@ -147,7 +154,7 @@ The JSON must follow this exact structure:
   },
   "suggestedImagePrompt": "Detailed natural prose photograph describing '${topic}' tailored for Flux",
   "suggestedVideoPrompt": "Cinematic camera movement and continuous motion scene explicitly depicting '${topic}' for Wan 2.2",
-  "suggestedAudioPrompt": "Dramatic cinematic news broadcast score, low sub bass riser, tense orchestral strings, layered with clear spokesperson dialogue announcement: '[quote about ${topic}]', broadcast television sound design"
+  "suggestedAudioPrompt": "Professional broadcast television news intro theme with tense orchestral motif, layered with authoritative news anchor speaking clearly into studio microphone: '[Specific urgent statement quoting ${topic}]', pristine broadcast acoustics"
 }`;
 
 	let rawJson = "";

@@ -181,7 +181,7 @@ export async function POST(request: NextRequest) {
 
 							const audioPrompt =
 								disinfoResult.suggestedAudioPrompt ||
-								`Dramatic cinematic breaking news broadcast intro, low bass riser, tense orchestral strings, authentic spokesperson dialogue announcement speaking into podium microphone: "${disinfoResult.headline}", professional television news production sound design`;
+								`Professional broadcast television news intro theme with tense orchestral motif and subtle electronic percussion, layered with an authoritative newsroom anchor speaking clearly into studio microphone: "${disinfoResult.headline}", pristine broadcast acoustics, polished television network sound production`;
 
 							const vidGen = await sparkClient.generateVideo(videoPrompt, {
 								model: "wan22",

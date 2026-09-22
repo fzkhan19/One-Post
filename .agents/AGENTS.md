@@ -84,7 +84,7 @@ This document serves as the persistent repository reference for One-Post, captur
   - Loudness Normalizer: `NormalizeAudioLoudness` (`lufs: -14.0`) to guarantee broadcast audio loudness.
   - Multiplexer: `VHS_VideoCombine` encoding H.264 MP4 with synchronized stereo audio track.
   - Negative Audio Conditioning: `harsh digital clipping, mumble, muffled, silent, glitch, ear rape, low quality noise, distortion`.
-  - Positive Audio Prompt: Layered cinematic breaking news score (low bass riser, tense orchestral strings) plus urgent spokesperson dialogue announcement quoting the headline into a press microphone.
+  - Positive Audio Prompt: Layered broadcast television news intro theme with tense orchestral motif and electronic percussion, combined with an authoritative newsroom anchor dialogue announcement directly quoting the breaking development for the scenario in pristine broadcast acoustics.
 
 ### Runs History & Social Mocks Gallery
 - **Storage**: Sequential JSON records in `public/generated/disinfo_runs_history.json`.
