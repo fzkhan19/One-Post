@@ -6,6 +6,7 @@
     "dev": "next dev --experimental-https",
     "build": "next build",
     "start": "next start",
+    "tunnel": "ssh -N -T -o StrictHostKeyChecking=no -o ServerAliveInterval=15 -o ServerAliveCountMax=6 -i C:\\Users\\Khan\\Downloads\\ssh-key-2026-09-03.key -R 8188:pc-4172.kl.dfki.de:8188 -R 11434:pc-4172.kl.dfki.de:11434 ubuntu@92.5.50.60",
     "lint": "biome lint --write",
     "format": "biome format --write",
     "prepare": "husky"
