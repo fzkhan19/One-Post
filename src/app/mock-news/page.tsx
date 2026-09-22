@@ -9,6 +9,8 @@ import type {
 	DisinformationVector,
 	Platform,
 } from "@/lib/ai/disinformation";
+import { DisinfoRunsGallery } from "@/components/disinformation/DisinfoRunsGallery";
+import { DisinfoSocialMockCard } from "@/components/disinformation/DisinfoSocialMockCard";
 import {
 	Activity,
 	ArrowLeft,
@@ -22,6 +24,7 @@ import {
 	Globe,
 	Heart,
 	Image as ImageIcon,
+	Layers,
 	Loader2,
 	MessageCircle,
 	MoreHorizontal,
@@ -143,6 +146,10 @@ const EXAMPLE_TOPICS: {
 ];
 
 export default function MockNewsPage() {
+	const [activeMainTab, setActiveMainTab] = useState<"generator" | "gallery">("generator");
+	const [runsCount, setRunsCount] = useState<number>(0);
+	const [galleryRefreshSignal, setGalleryRefreshSignal] = useState<number>(0);
+
 	const [topic, setTopic] = useState("");
 	const [vector, setVector] = useState<DisinformationVector>(
 		"fabricated_breaking_news",
@@ -155,6 +162,7 @@ export default function MockNewsPage() {
 	const [previewPlatform, setPreviewPlatform] = useState<Platform>("twitter");
 	const [includeImage, setIncludeImage] = useState(true);
 	const [includeVideo, setIncludeVideo] = useState(false);
+	const [videoDuration, setVideoDuration] = useState<10 | 12 | 15>(10);
 	const [mediaModel, setMediaModel] = useState<"flux" | "flux2">("flux");
 	const [useCache, setUseCache] = useState(true);
 
@@ -221,7 +229,7 @@ export default function MockNewsPage() {
 
 	const [isClearingCache, setIsClearingCache] = useState(false);
 
-	// Query Spark status on mount
+	// Query Spark status and runs count on mount
 	useEffect(() => {
 		fetch("/api/spark/status")
 			.then((res) => res.json())
@@ -229,7 +237,16 @@ export default function MockNewsPage() {
 				if (data?.spark) setSparkStatus(data.spark);
 			})
 			.catch(() => {});
-	}, []);
+
+		fetch("/api/ai/disinformation?action=runs")
+			.then((res) => res.json())
+			.then((data) => {
+				if (data?.success && Array.isArray(data.runs)) {
+					setRunsCount(data.runs.length);
+				}
+			})
+			.catch(() => {});
+	}, [galleryRefreshSignal]);
 
 	const handleClearCache = async () => {
 		if (isClearingCache) return;
@@ -273,7 +290,11 @@ export default function MockNewsPage() {
 		);
 		setResult(null);
 
-		const totalEstimatedSeconds = includeVideo ? 80 : includeImage ? 16 : 6;
+		const totalEstimatedSeconds = includeVideo
+			? Math.round(videoDuration * 6.5)
+			: includeImage
+				? 16
+				: 6;
 		const intervalMs = 250;
 		const progressPerTick = 92 / ((totalEstimatedSeconds * 1000) / intervalMs);
 
@@ -299,7 +320,9 @@ export default function MockNewsPage() {
 			} else {
 				setActiveStage(3);
 				if (includeVideo) {
-					setProgressStep("Stage 3/3: Rendering video asset on Spark 2 GPU...");
+					setProgressStep(
+						`Stage 3/3: Rendering Wan 2.2 ${videoDuration}s photorealistic video + dialogue on Spark 2 GPU...`,
+					);
 				} else {
 					setProgressStep("Stage 3/3: Assembling social mock structures...");
 				}
@@ -317,6 +340,7 @@ export default function MockNewsPage() {
 					platform: selectedPlatforms[0],
 					generateImage: includeImage,
 					generateVideo: includeVideo,
+					videoDuration,
 					mediaModel,
 					useCache: forceRegenerate ? false : useCache,
 					forceRegenerate,
@@ -348,8 +372,9 @@ export default function MockNewsPage() {
 				if (data.data.isCached) {
 					toast.success("Loaded from 30-day cache (saved GPU compute & time)!");
 				} else {
-					toast.success("Fresh mock news payload generated and cached!");
+					toast.success("Fresh mock news payload generated and recorded as a new run batch!");
 				}
+				setGalleryRefreshSignal((prev) => prev + 1);
 			} else {
 				toast.error(data.error || "Failed to generate mock news.");
 			}
@@ -425,9 +450,38 @@ export default function MockNewsPage() {
 							<span>Dashboard</span>
 						</Link>
 						<span className="text-zinc-300 dark:text-zinc-700">/</span>
-						<span className="font-semibold text-xs tracking-tight">
-							Mock News Generator
-						</span>
+						<div className="flex items-center gap-1 rounded-lg border border-zinc-200 bg-zinc-100/80 p-0.5 dark:border-zinc-800 dark:bg-zinc-800/80">
+							<button
+								type="button"
+								onClick={() => setActiveMainTab("generator")}
+								className={`flex items-center gap-1.5 rounded-md px-3 py-1 font-medium text-xs transition-all ${
+									activeMainTab === "generator"
+										? "bg-white text-zinc-900 shadow-xs dark:bg-zinc-900 dark:text-white"
+										: "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+								}`}
+							>
+								<Sparkles className="h-3 w-3" />
+								<span>Generator</span>
+							</button>
+
+							<button
+								type="button"
+								onClick={() => setActiveMainTab("gallery")}
+								className={`flex items-center gap-1.5 rounded-md px-3 py-1 font-medium text-xs transition-all ${
+									activeMainTab === "gallery"
+										? "bg-white text-zinc-900 shadow-xs dark:bg-zinc-900 dark:text-white"
+										: "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+								}`}
+							>
+								<Layers className="h-3 w-3" />
+								<span>Runs Gallery</span>
+								{runsCount > 0 && (
+									<span className="rounded-full bg-zinc-200 px-1.5 py-0.2 font-mono text-[10px] text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200">
+										{runsCount}
+									</span>
+								)}
+							</button>
+						</div>
 					</div>
 
 					{/* Cluster & Cache Status Indicator + Clear Cache */}
@@ -467,17 +521,26 @@ export default function MockNewsPage() {
 
 			{/* Main Workspace */}
 			<main className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
-				{/* Section Header */}
-				<div className="space-y-1">
-					<h1 className="font-bold text-xl text-zinc-900 tracking-tight sm:text-2xl dark:text-white">
-						Synthetic News & Virality Lab
-					</h1>
-					<p className="text-sm text-zinc-500 dark:text-zinc-400">
-						Generate synthetic news scenarios, provocative narratives, and
-						multi-platform assets to test automated content moderation and
-						detection filters.
-					</p>
-				</div>
+				{activeMainTab === "gallery" ? (
+					<DisinfoRunsGallery
+						refreshSignal={galleryRefreshSignal}
+						onSelectRun={(run) => {
+							// Optionally populate topic or inspect
+						}}
+					/>
+				) : (
+					<>
+						{/* Section Header */}
+						<div className="space-y-1">
+							<h1 className="font-bold text-xl text-zinc-900 tracking-tight sm:text-2xl dark:text-white">
+								Synthetic News & Virality Lab
+							</h1>
+							<p className="text-sm text-zinc-500 dark:text-zinc-400">
+								Generate synthetic news scenarios, provocative narratives, and
+								multi-platform assets to test automated content moderation and
+								detection filters.
+							</p>
+						</div>
 
 				{/* Quick Example Target Topics */}
 				<div className="space-y-2 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
@@ -693,7 +756,7 @@ export default function MockNewsPage() {
 								<div className="rounded-md border border-zinc-200 bg-zinc-50/50 p-3 dark:border-zinc-800 dark:bg-zinc-800/30">
 									<div className="flex items-center justify-between">
 										<span className="font-medium text-xs text-zinc-800 dark:text-zinc-200">
-											Video Asset (Hunyuan)
+											Synthetic Video (Wan 2.2 + Dialogue Audio)
 										</span>
 										<input
 											type="checkbox"
@@ -703,9 +766,31 @@ export default function MockNewsPage() {
 										/>
 									</div>
 									{includeVideo && (
-										<p className="pt-1 text-[11px] text-zinc-500">
-											~3s dynamic video clip rendered on Spark 2 GPU
-										</p>
+										<div className="space-y-2 pt-2">
+											{/* Duration Selector */}
+											<div className="flex items-center justify-between text-[11px]">
+												<span className="text-zinc-500">Duration:</span>
+												<div className="flex rounded-md border border-zinc-200 bg-white p-0.5 dark:border-zinc-700 dark:bg-zinc-800">
+													{([10, 12, 15] as const).map((d) => (
+														<button
+															key={d}
+															type="button"
+															onClick={() => setVideoDuration(d)}
+															className={`rounded-sm px-2 py-0.5 font-medium transition-colors ${
+																videoDuration === d
+																	? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+																	: "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400"
+															}`}
+														>
+															{d}s
+														</button>
+													))}
+												</div>
+											</div>
+											<p className="text-[10px] text-zinc-400">
+												Photorealistic Wan 2.2 ({videoDuration}s) with topic-aligned dialogue acoustics and uni_pc sampling
+											</p>
+										</div>
 									)}
 								</div>
 							</div>
@@ -1025,7 +1110,7 @@ export default function MockNewsPage() {
 															</span>
 															<div className="flex items-center gap-1.5">
 																<span className="rounded-sm bg-zinc-200 px-1 py-0.5 font-mono text-[9px] text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">
-																	Hunyuan Video
+																	Wan 2.2 + Audio
 																</span>
 																<button
 																	type="button"
@@ -1100,231 +1185,20 @@ export default function MockNewsPage() {
 								</div>
 							</div>
 
-							{/* Feed Card Rendering Container */}
+							{/* Feed Card Rendering Container using shared DisinfoSocialMockCard */}
 							<div className="flex justify-center p-2 sm:p-4">
-								{/* 1. TWITTER / X CARD */}
-								{previewPlatform === "twitter" && (
-									<div className="w-full max-w-[540px] space-y-3 rounded-xl border border-zinc-200 bg-white p-4 font-sans text-zinc-900 shadow-xs dark:border-zinc-800 dark:bg-black dark:text-white">
-										<div className="flex items-center justify-between">
-											<div className="flex items-center gap-2.5">
-												<div className="flex h-9 w-9 items-center justify-center rounded-full bg-zinc-900 font-bold text-white text-xs dark:bg-zinc-100 dark:text-zinc-900">
-													GW
-												</div>
-												<div>
-													<div className="flex items-center gap-1.5">
-														<span className="font-semibold text-xs hover:underline">
-															Global Wire Network
-														</span>
-														<span className="text-blue-500 text-xs">✓</span>
-														<span className="text-[11px] text-zinc-500">
-															@GlobalWireNet
-														</span>
-													</div>
-													<span className="text-[10px] text-zinc-400">
-														Breaking Wire Simulation
-													</span>
-												</div>
-											</div>
-											<MoreHorizontal className="h-4 w-4 text-zinc-400" />
-										</div>
-
-										<p className="whitespace-pre-wrap text-sm text-zinc-800 leading-relaxed dark:text-zinc-200">
-											{result.platforms?.twitter?.text || result.postContent}
-										</p>
-
-										{(result.video?.url || result.image?.url) && (
-											<div className="max-h-[320px] overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900">
-												{result.video?.url ? (
-													<video
-														src={result.video.url}
-														controls
-														autoPlay
-														loop
-														muted
-														className="h-full max-h-[320px] w-full object-cover"
-													/>
-												) : (
-													<img
-														src={result.image?.url}
-														alt="Twitter attachment"
-														className="h-full max-h-[320px] w-full object-cover"
-													/>
-												)}
-											</div>
-										)}
-
-										<div className="flex items-center justify-between border-zinc-100 border-t px-1 pt-2 text-xs text-zinc-500 dark:border-zinc-800">
-											<span className="flex items-center gap-1.5">
-												<MessageCircle className="h-3.5 w-3.5" /> 1.2K
-											</span>
-											<span className="flex items-center gap-1.5">
-												<Repeat2 className="h-3.5 w-3.5" /> 8.4K
-											</span>
-											<span className="flex items-center gap-1.5">
-												<Heart className="h-3.5 w-3.5" /> 24.1K
-											</span>
-											<span className="flex items-center gap-1.5">
-												<Bookmark className="h-3.5 w-3.5" /> 3.9K
-											</span>
-											<Share2 className="h-3.5 w-3.5" />
-										</div>
-									</div>
-								)}
-
-								{/* 2. INSTAGRAM FEED CARD */}
-								{previewPlatform === "instagram" && (
-									<div className="w-full max-w-[420px] overflow-hidden rounded-xl border border-zinc-200 bg-white font-sans text-zinc-900 shadow-xs dark:border-zinc-800 dark:bg-black dark:text-white">
-										<div className="flex items-center justify-between border-zinc-100 border-b p-3 dark:border-zinc-800">
-											<div className="flex items-center gap-2">
-												<div className="h-7 w-7 rounded-full bg-gradient-to-tr from-yellow-500 via-pink-500 to-purple-600 p-[1.5px]">
-													<div className="flex h-full w-full items-center justify-center rounded-full bg-white font-bold text-[9px] text-zinc-900 dark:bg-black dark:text-white">
-														IG
-													</div>
-												</div>
-												<span className="font-semibold text-xs">
-													breaking.news.daily
-												</span>
-											</div>
-											<MoreHorizontal className="h-4 w-4 text-zinc-400" />
-										</div>
-
-										<div className="flex aspect-square items-center justify-center overflow-hidden bg-zinc-100 dark:bg-zinc-900">
-											{result.video?.url ? (
-												<video
-													src={result.video.url}
-													controls
-													autoPlay
-													loop
-													muted
-													className="h-full w-full object-cover"
-												/>
-											) : result.image?.url ? (
-												<img
-													src={result.image.url}
-													alt="Instagram asset"
-													className="h-full w-full object-cover"
-												/>
-											) : (
-												<span className="text-xs text-zinc-400">
-													No media asset
-												</span>
-											)}
-										</div>
-
-										<div className="space-y-2 p-3.5">
-											<div className="flex items-center justify-between">
-												<div className="flex items-center gap-3">
-													<Heart className="h-5 w-5 fill-red-500 text-red-500" />
-													<MessageCircle className="h-5 w-5" />
-													<Share2 className="h-5 w-5" />
-												</div>
-												<Bookmark className="h-5 w-5" />
-											</div>
-											<div className="font-semibold text-xs">41,208 likes</div>
-											<div className="text-xs text-zinc-700 leading-relaxed dark:text-zinc-300">
-												<span className="mr-1.5 font-semibold text-zinc-900 dark:text-white">
-													breaking.news.daily
-												</span>
-												<span className="whitespace-pre-wrap">
-													{result.platforms?.instagram?.text ||
-														result.postContent}
-												</span>
-											</div>
-											{result.platforms?.instagram?.engagementPrompt && (
-												<div className="font-medium text-[11px] text-blue-500">
-													{result.platforms.instagram.engagementPrompt}
-												</div>
-											)}
-											<div className="text-[10px] text-zinc-400 uppercase">
-												38 MINUTES AGO
-											</div>
-										</div>
-									</div>
-								)}
-
-								{/* 3. TIKTOK VERTICAL CARD */}
-								{previewPlatform === "tiktok" && (
-									<div className="relative flex h-[560px] w-[310px] flex-col justify-between overflow-hidden rounded-2xl border border-zinc-300 bg-black font-sans text-white shadow-md dark:border-zinc-800">
-										<div className="absolute inset-0 z-0 bg-zinc-900">
-											{result.video?.url ? (
-												<video
-													src={result.video.url}
-													controls={false}
-													autoPlay
-													loop
-													muted
-													className="h-full w-full object-cover"
-												/>
-											) : result.image?.url ? (
-												<img
-													src={result.image.url}
-													alt="TikTok background"
-													className="h-full w-full object-cover opacity-90"
-												/>
-											) : (
-												<div className="flex h-full w-full items-center justify-center text-xs text-zinc-500">
-													Vertical Media Frame
-												</div>
-											)}
-											<div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/80" />
-										</div>
-
-										{/* Top indicator */}
-										<div className="relative z-10 flex items-center justify-center gap-4 pt-3 font-semibold text-white/80 text-xs">
-											<span className="text-white/50">Following</span>
-											<span className="border-white border-b pb-0.5 text-white">
-												For You
-											</span>
-										</div>
-
-										{/* Right action icons */}
-										<div className="absolute right-2.5 bottom-16 z-10 flex flex-col items-center gap-3 text-white">
-											<div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500 font-bold text-xs">
-												+
-											</div>
-											<div className="flex flex-col items-center gap-0.5">
-												<Heart className="h-5 w-5 fill-white" />
-												<span className="font-semibold text-[9px]">142.5K</span>
-											</div>
-											<div className="flex flex-col items-center gap-0.5">
-												<MessageCircle className="h-5 w-5 fill-white" />
-												<span className="font-semibold text-[9px]">3,892</span>
-											</div>
-											<div className="flex flex-col items-center gap-0.5">
-												<Bookmark className="h-5 w-5 fill-white" />
-												<span className="font-semibold text-[9px]">18.1K</span>
-											</div>
-											<div className="flex flex-col items-center gap-0.5">
-												<Share2 className="h-5 w-5 fill-white" />
-												<span className="font-semibold text-[9px]">9,410</span>
-											</div>
-										</div>
-
-										{/* Bottom caption */}
-										<div className="relative z-10 max-w-[230px] space-y-1.5 p-3.5 text-white">
-											<span className="block font-semibold text-xs">
-												@unfiltered.leaks
-											</span>
-											<p className="line-clamp-3 text-[11px] text-zinc-200">
-												{result.platforms?.tiktok?.text || result.postContent}
-											</p>
-											{result.platforms?.tiktok?.engagementPrompt && (
-												<p className="font-semibold text-[10px] text-amber-300">
-													{result.platforms.tiktok.engagementPrompt}
-												</p>
-											)}
-											<div className="flex items-center gap-1.5 text-[9px] text-zinc-400">
-												<Music2 className="h-3 w-3" />
-												<span className="truncate">
-													Original Sound - Global Wire
-												</span>
-											</div>
-										</div>
-									</div>
-								)}
+								<DisinfoSocialMockCard
+									platform={previewPlatform}
+									result={result}
+									image={result.image}
+									video={result.video}
+									activeMediaType={result.video?.url ? "video" : "image"}
+								/>
 							</div>
 						</div>
 					</div>
+				)}
+					</>
 				)}
 
 				{/* Footer */}

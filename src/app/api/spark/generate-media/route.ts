@@ -42,13 +42,14 @@ export async function POST(request: NextRequest) {
 			const savePath = path.join(publicDir, filename);
 
 			const videoResult = await client.generateVideo(prompt, {
-				model: "hunyuan",
-				width: 848,
+				model: "wan22",
+				width: 832,
 				height: 480,
-				length: 73, // ~3 seconds for fast social previews
+				length: 33,
 				steps: 12,
+				audioPrompt: `${prompt}, realistic ambient news sound, background noise`,
 				savePath,
-				timeout: 600000,
+				timeout: 300000,
 			});
 
 			client.close();

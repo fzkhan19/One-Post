@@ -121,9 +121,9 @@ export class Spark2Client {
       filename: output.filename,
       contentType: 'video/mp4',
       metadata: {
-        model: options?.model ?? 'hunyuan',
+        model: options?.model ?? 'wan22',
         prompt,
-        seed: setup.workflow['25']?.inputs?.noise_seed
+        seed: setup.workflow['7']?.inputs?.seed ?? setup.workflow['25']?.inputs?.noise_seed
       }
     };
 

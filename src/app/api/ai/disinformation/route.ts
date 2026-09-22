@@ -7,7 +7,10 @@ import {
 import {
 	type MediaAssetInfo,
 	clearDisinfoCache,
+	clearDisinfoRuns,
 	getCachedDisinfo,
+	getDisinfoRuns,
+	recordDisinfoRunBatch,
 	setCachedDisinfo,
 } from "@/lib/cache/disinfoCache";
 import { Spark2Client } from "@/lib/spark2";
@@ -15,6 +18,19 @@ import { type NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
 	const { searchParams } = new URL(request.url);
+	const action = searchParams.get("action");
+
+	// If requesting runs history for the batch gallery
+	if (action === "runs" || action === "gallery") {
+		const runs = await getDisinfoRuns();
+		// Return latest runs first
+		const sorted = [...runs].sort((a, b) => (b.runIndex || 0) - (a.runIndex || 0));
+		return NextResponse.json({
+			success: true,
+			runs: sorted,
+		});
+	}
+
 	const topic = searchParams.get("topic") || "";
 	const vector = searchParams.get("vector") || "fabricated_breaking_news";
 	const requireImage = searchParams.get("requireImage") === "true";
@@ -49,8 +65,20 @@ export async function GET(request: NextRequest) {
 	return NextResponse.json({ success: true, cached: false });
 }
 
-export async function DELETE() {
+export async function DELETE(request: NextRequest) {
 	try {
+		const { searchParams } = new URL(request.url);
+		const target = searchParams.get("target");
+
+		if (target === "runs") {
+			const clearedRuns = await clearDisinfoRuns();
+			return NextResponse.json({
+				success: true,
+				cleared: clearedRuns,
+				message: `Cleared ${clearedRuns} run batches.`,
+			});
+		}
+
 		const clearedCount = await clearDisinfoCache();
 		return NextResponse.json({
 			success: true,
@@ -75,6 +103,8 @@ export async function POST(request: NextRequest) {
 			platforms,
 			generateMedia = true,
 			mediaModel = "flux",
+			videoModel = "wan22",
+			videoDuration = 10,
 			forceRegenerate = false,
 			useCache = true,
 		} = body;
@@ -209,19 +239,30 @@ export async function POST(request: NextRequest) {
 								disinfoResult.suggestedImagePrompt;
 							const primaryTarget = targetPlatforms[0] || "twitter";
 
-							// Video dimensions: Twitter 16:9 (848x480), Instagram/TikTok 9:16 vertical (480x848)
-							const vidWidth = primaryTarget === "twitter" ? 848 : 480;
-							const vidHeight = primaryTarget === "twitter" ? 480 : 848;
+							// Video dimensions: Twitter 16:9 (832x480), Instagram/TikTok 9:16 vertical (480x832)
+							const vidWidth = primaryTarget === "twitter" ? 832 : 480;
+							const vidHeight = primaryTarget === "twitter" ? 480 : 832;
+
+							// Frame length calculation:
+							// Enforce at least 10 seconds per user requirement
+							const targetSec = Math.max(10, Number(videoDuration) || 10);
+							// Wan: 16fps -> 10s = 161 frames; 12s = 193 frames; 15s = 241 frames
+							const frameLength = Math.round(targetSec * 16) + 1;
+							const timeoutMs = targetSec >= 15 ? 600000 : 480000;
+
+							const audioPrompt =
+								disinfoResult.suggestedAudioPrompt ||
+								`Spokesperson speaking firmly into microphone at press podium: "${disinfoResult.headline}", authentic newsroom speech dialogue, broadcast television acoustics`;
 
 							const vidGen = await sparkClient.generateVideo(videoPrompt, {
-								model: "hunyuan",
+								model: "wan22",
 								width: vidWidth,
 								height: vidHeight,
-								length: 73, // ~3 seconds at 24fps
-								steps: 18,
-								guidance: 7.0,
+								length: frameLength,
+								steps: 16,
+								audioPrompt,
 								savePath,
-								timeout: 480000,
+								timeout: timeoutMs,
 							});
 
 							videoResult = {
@@ -230,7 +271,7 @@ export async function POST(request: NextRequest) {
 								sizeKb: Math.round(vidGen.buffer.length / 1024),
 								prompt: videoPrompt,
 								type: "video",
-								model: "hunyuan",
+								model: "wan22",
 								generatedAt: timestamp,
 							};
 						} catch (vidErr) {
@@ -269,6 +310,33 @@ export async function POST(request: NextRequest) {
 			console.warn("[Disinformation API] Failed to write cache:", cacheErr);
 		}
 
+		// 5. Record run batch into persistent runs history (e.g. run-1, run-2...)
+		let runBatch = null;
+		try {
+			const platformImages: Partial<Record<"twitter" | "instagram" | "tiktok", MediaAssetInfo | null>> = {};
+			const platformVideos: Partial<Record<"twitter" | "instagram" | "tiktok", MediaAssetInfo | null>> = {};
+
+			for (const p of ["twitter", "instagram", "tiktok"] as const) {
+				if (targetPlatforms.includes(p)) {
+					platformImages[p] = imageResult;
+					platformVideos[p] = videoResult;
+				}
+			}
+
+			runBatch = await recordDisinfoRunBatch({
+				topic,
+				vector,
+				platforms: targetPlatforms,
+				result: disinfoResult,
+				images: platformImages,
+				videos: platformVideos,
+				image: imageResult,
+				video: videoResult,
+			});
+		} catch (batchErr) {
+			console.warn("[Disinformation API] Failed to record run batch:", batchErr);
+		}
+
 		return NextResponse.json({
 			success: true,
 			data: {
@@ -276,6 +344,7 @@ export async function POST(request: NextRequest) {
 				media: imageResult || videoResult || null,
 				image: imageResult,
 				video: videoResult,
+				runBatch,
 				isCached: false,
 			},
 		});

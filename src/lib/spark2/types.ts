@@ -117,13 +117,15 @@ export interface GenerateImageOptions {
 }
 
 export interface GenerateVideoOptions {
-	model?: "hunyuan";
+	model?: "wan22" | "hunyuan";
 	width?: number;
 	height?: number;
 	length?: number;
 	steps?: number;
 	guidance?: number;
 	seed?: number;
+	audioPrompt?: string;
+	includeAudio?: boolean;
 	timeout?: number;
 	onProgress?: (progress: GenerationProgress) => void;
 	signal?: AbortSignal;

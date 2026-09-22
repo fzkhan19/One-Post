@@ -25,6 +25,7 @@ export interface DisinformationResult {
 	platforms: Record<Platform, PlatformPost>; // Tailored posts for all 3 platforms
 	suggestedImagePrompt: string; // Platform-aware visual prompt
 	suggestedVideoPrompt: string; // Platform-aware vertical / dynamic video prompt
+	suggestedAudioPrompt: string; // Dialogue-aligned spoken statement and audio soundscape
 }
 
 const VECTOR_DESCRIPTIONS: Record<DisinformationVector, string> = {
@@ -121,7 +122,8 @@ The JSON must follow this exact structure:
     }
   },
   "suggestedImagePrompt": "Vivid photorealistic scene explicitly visualizing '${topic}' tailored for ${primaryPlatform}",
-  "suggestedVideoPrompt": "Cinematic dynamic video scene explicitly depicting '${topic}' with camera movement and visual action tailored for ${primaryPlatform}"
+  "suggestedVideoPrompt": "Cinematic dynamic video scene explicitly depicting '${topic}' with camera movement and visual action tailored for ${primaryPlatform}",
+  "suggestedAudioPrompt": "Clear authoritative spoken dialogue delivered through a broadcast microphone about '${topic}', realistic spokesperson dialogue voice statement, television news studio acoustics, subtle press conference background murmur"
 }`;
 
 	let rawJson = "";
@@ -231,6 +233,7 @@ The JSON must follow this exact structure:
 			},
 			suggestedImagePrompt: `A dramatic, high-contrast photojournalistic shot related to ${topic}, breaking news atmosphere, telephoto lens, 4k`,
 			suggestedVideoPrompt: `Cinematic breaking news video footage showing emergency vehicles and motion related to ${topic}, documentary news broadcast camera style, 4k`,
+			suggestedAudioPrompt: `Spokesperson speaking clearly through broadcast microphone addressing reporters about ${topic}, natural press conference speech dialogue and room reverberation, professional acoustic broadcast`,
 		};
 	}
 }

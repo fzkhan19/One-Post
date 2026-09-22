@@ -8,6 +8,7 @@ import flux2Wf from "./templates/flux2_wf.json";
 import hunyuanWf from "./templates/hunyuan-t2v.json";
 import flux1Wf from "./templates/image_generation_wf.json";
 import florenceWf from "./templates/image_to_text_florence.json";
+import wan22Wf from "./templates/wan22-video-audio.json";
 
 import type {
 	GenerateImageOptions,
@@ -126,18 +127,77 @@ export function setupTextToImage(
 }
 
 // ============================================================================
-// Text to Video Setup
+// Text to Video Setup (Supports Wan 2.2 + Stable Audio & HunyuanVideo)
 // ============================================================================
 
 export function setupTextToVideo(
 	prompt: string,
 	options?: GenerateVideoOptions,
 ): WorkflowRequest {
+	const model = options?.model ?? "wan22"; // Default to photorealistic Wan 2.2 with audio
 	const seed = resolveSeed(options?.seed);
-	const steps = options?.steps ?? 20;
+
+	if (model === "wan22") {
+		const wf = deepClone(wan22Wf) as Record<string, any>;
+		const steps = options?.steps ?? 16;
+		const width = options?.width ?? 832;
+		const height = options?.height ?? 480;
+		const length = options?.length ?? 33; // ~2 seconds at 16fps
+
+		// Node 5: Wan video positive text prompt
+		if (wf["5"]?.inputs) {
+			wf["5"].inputs.text = prompt;
+		}
+		// Node 4: Wan22ImageToVideoLatent resolution & length
+		if (wf["4"]?.inputs) {
+			wf["4"].inputs.width = width;
+			wf["4"].inputs.height = height;
+			wf["4"].inputs.length = length;
+		}
+		// Node 7: Wan KSampler steps & seed
+		if (wf["7"]?.inputs) {
+			wf["7"].inputs.steps = steps;
+			wf["7"].inputs.seed = seed;
+		}
+		// Audio prompt & duration (Node 13: Stable Audio positive prompt)
+		const audioPrompt =
+			options?.audioPrompt ||
+			`Clear authentic spokesperson dialogue speaking directly into news microphone: "${prompt}", live news speech, broadcast acoustic environment`;
+		if (wf["13"]?.inputs) {
+			wf["13"].inputs.text = audioPrompt;
+		}
+		const audioSeconds = Math.max(2, Math.round((length / 16) * 10) / 10);
+		if (wf["12"]?.inputs) {
+			wf["12"].inputs.seconds = audioSeconds;
+		}
+		if (wf["15"]?.inputs) {
+			wf["15"].inputs.seconds_total = audioSeconds;
+		}
+		if (wf["16"]?.inputs) {
+			wf["16"].inputs.seed = seed;
+		}
+
+		// Node 18: VHS_VideoCombine output prefix
+		const randomPrefix = `wan22_${Math.floor(Math.random() * 100000)}`;
+		if (wf["18"]?.inputs) {
+			wf["18"].inputs.filename_prefix = `video/${randomPrefix}`;
+		}
+
+		return {
+			workflow: wf,
+			outputNodeId: "18",
+			mediaType: "video",
+			timeout: options?.timeout ?? 300000, // 5 minutes default (Wan 2.2 finishes in ~25-45s)
+			onProgress: options?.onProgress,
+			signal: options?.signal,
+		};
+	}
+
+	// Fallback to HunyuanVideo
+	const steps = options?.steps ?? 18;
 	const width = options?.width ?? 848;
 	const height = options?.height ?? 480;
-	const length = options?.length ?? 73; // ~3 seconds at 24fps
+	const length = options?.length ?? 73;
 
 	const wf = deepClone(hunyuanWf) as Record<string, any>;
 
@@ -173,7 +233,7 @@ export function setupTextToVideo(
 		workflow: wf,
 		outputNodeId: "99",
 		mediaType: "video",
-		timeout: options?.timeout ?? 600000, // 10 minutes default
+		timeout: options?.timeout ?? 600000,
 		onProgress: options?.onProgress,
 		signal: options?.signal,
 	};
