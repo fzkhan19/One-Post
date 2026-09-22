@@ -81,7 +81,7 @@ This document serves as the persistent repository reference for One-Post, captur
   - Enforced minimum: `Math.max(5, videoDuration)`.
 - **Dialogue-Aligned Cinematic Audio**:
   - Engine: **Stable Audio Open 1.0** (`stable_audio_open_1.0.safetensors` + `t5_base.safetensors`).
-  - Loudness Normalizer: `NormalizeAudioLoudness` (`lufs: -14.0`) to guarantee broadcast audio loudness.
+  - Loudness Normalizer: `NormalizeAudioLoudness` (`lufs: -22.0`) to balance audible presence with comfortable listening volume without harsh blaring.
   - Multiplexer: `VHS_VideoCombine` encoding H.264 MP4 with synchronized stereo audio track.
   - Negative Audio Conditioning: `harsh digital clipping, mumble, muffled, silent, glitch, ear rape, low quality noise, distortion`.
   - Positive Audio Prompt: Layered broadcast television news intro theme with tense orchestral motif and electronic percussion, combined with an authoritative newsroom anchor dialogue announcement directly quoting the breaking development for the scenario in pristine broadcast acoustics.

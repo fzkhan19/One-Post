@@ -134,7 +134,7 @@
     "class_type": "NormalizeAudioLoudness",
     "inputs": {
       "audio": ["17", 0],
-      "lufs": -14.0
+      "lufs": -22.0
     }
   },
   "18": {

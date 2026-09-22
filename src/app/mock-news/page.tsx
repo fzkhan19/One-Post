@@ -36,7 +36,7 @@ import {
 	Zap,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 const VECTORS: {
@@ -987,6 +987,9 @@ export default function MockNewsPage() {
 																autoPlay
 																loop
 																playsInline
+																onPlay={(e) => {
+																	e.currentTarget.volume = 0.5;
+																}}
 																className="h-full w-full object-cover"
 															/>
 														</div>

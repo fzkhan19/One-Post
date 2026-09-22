@@ -42,6 +42,7 @@ export function DisinfoSocialMockCard({
 	// biome-ignore lint/correctness/useExhaustiveDependencies: run on video url change to play new video
 	React.useEffect(() => {
 		if (videoRef.current) {
+			videoRef.current.volume = 0.5;
 			videoRef.current.muted = false;
 			videoRef.current.play().catch(() => {
 				// Browser autoplay policy blocked unmuted playback; fallback to muted autoplay
