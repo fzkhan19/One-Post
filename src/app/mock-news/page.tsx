@@ -1,5 +1,7 @@
 "use client";
 
+import { DisinfoRunsGallery } from "@/components/disinformation/DisinfoRunsGallery";
+import { DisinfoSocialMockCard } from "@/components/disinformation/DisinfoSocialMockCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,8 +11,6 @@ import type {
 	DisinformationVector,
 	Platform,
 } from "@/lib/ai/disinformation";
-import { DisinfoRunsGallery } from "@/components/disinformation/DisinfoRunsGallery";
-import { DisinfoSocialMockCard } from "@/components/disinformation/DisinfoSocialMockCard";
 import {
 	Activity,
 	ArrowLeft,
@@ -146,7 +146,9 @@ const EXAMPLE_TOPICS: {
 ];
 
 export default function MockNewsPage() {
-	const [activeMainTab, setActiveMainTab] = useState<"generator" | "gallery">("generator");
+	const [activeMainTab, setActiveMainTab] = useState<"generator" | "gallery">(
+		"generator",
+	);
 	const [runsCount, setRunsCount] = useState<number>(0);
 	const [galleryRefreshSignal, setGalleryRefreshSignal] = useState<number>(0);
 
@@ -161,7 +163,7 @@ export default function MockNewsPage() {
 	]);
 	const [previewPlatform, setPreviewPlatform] = useState<Platform>("twitter");
 	const [includeImage, setIncludeImage] = useState(true);
-	const [includeVideo, setIncludeVideo] = useState(false);
+	const [includeVideo, setIncludeVideo] = useState(true);
 	const [videoDuration, setVideoDuration] = useState<10 | 12 | 15>(10);
 	const [mediaModel, setMediaModel] = useState<"flux" | "flux2">("flux");
 	const [useCache, setUseCache] = useState(true);
@@ -230,6 +232,7 @@ export default function MockNewsPage() {
 	const [isClearingCache, setIsClearingCache] = useState(false);
 
 	// Query Spark status and runs count on mount
+	// biome-ignore lint/correctness/useExhaustiveDependencies: galleryRefreshSignal triggers refetch on new runs
 	useEffect(() => {
 		fetch("/api/spark/status")
 			.then((res) => res.json())
@@ -372,7 +375,9 @@ export default function MockNewsPage() {
 				if (data.data.isCached) {
 					toast.success("Loaded from 30-day cache (saved GPU compute & time)!");
 				} else {
-					toast.success("Fresh mock news payload generated and recorded as a new run batch!");
+					toast.success(
+						"Fresh mock news payload generated and recorded as a new run batch!",
+					);
 				}
 				setGalleryRefreshSignal((prev) => prev + 1);
 			} else {
@@ -542,662 +547,667 @@ export default function MockNewsPage() {
 							</p>
 						</div>
 
-				{/* Quick Example Target Topics */}
-				<div className="space-y-2 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-					<div className="flex items-center justify-between">
-						<span className="font-medium text-xs text-zinc-700 dark:text-zinc-300">
-							Example Target Topics
-						</span>
-						<span className="text-[11px] text-zinc-400">
-							Click to quickly populate scenario and manipulation vector
-						</span>
-					</div>
-
-					<div className="flex flex-wrap gap-2 pt-1">
-						{EXAMPLE_TOPICS.map((ex) => (
-							<button
-								key={ex.title}
-								type="button"
-								onClick={() => applyExampleTopic(ex)}
-								className="group flex items-center gap-2 rounded-md border border-zinc-200 bg-zinc-50/70 px-2.5 py-1.5 text-left text-xs transition-colors hover:border-zinc-300 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-800/50 dark:hover:border-zinc-700 dark:hover:bg-zinc-800"
-							>
-								<span className="font-medium text-zinc-800 dark:text-zinc-200">
-									{ex.title}
-								</span>
-								<span className="rounded-sm bg-zinc-200 px-1 py-0.2 font-medium text-[10px] text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">
-									{ex.category}
-								</span>
-							</button>
-						))}
-					</div>
-				</div>
-
-				{/* Input & Configurations Grid */}
-				<div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-					{/* Left Column: Topic & Vectors (7 cols) */}
-					<div className="space-y-5 lg:col-span-7">
-						{/* Topic Input */}
-						<div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-							<Label
-								htmlFor="topic-input"
-								className="block font-medium text-xs text-zinc-700 dark:text-zinc-300"
-							>
-								Target Topic or Scenario Prompt
-							</Label>
-							<Input
-								id="topic-input"
-								value={topic}
-								onChange={(e) => setTopic(e.target.value)}
-								placeholder="e.g. Central Bank declares emergency digital currency restrictions..."
-								className="mt-2 h-10 rounded-md border border-zinc-300 bg-white px-3 text-sm focus:border-zinc-900 focus:ring-0 dark:border-zinc-700 dark:bg-zinc-800 dark:focus:border-zinc-100"
-							/>
-						</div>
-
-						{/* Manipulation Vector Selector */}
-						<div className="space-y-2.5 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+						{/* Quick Example Target Topics */}
+						<div className="space-y-2 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
 							<div className="flex items-center justify-between">
 								<span className="font-medium text-xs text-zinc-700 dark:text-zinc-300">
-									Manipulation Vector
+									Example Target Topics
 								</span>
-								<span className="text-[11px] text-zinc-500">
-									Selected: {VECTORS.find((v) => v.id === vector)?.tag}
+								<span className="text-[11px] text-zinc-400">
+									Click to quickly populate scenario and manipulation vector
 								</span>
 							</div>
 
-							<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-								{VECTORS.map((v) => {
-									const isSelected = vector === v.id;
-									return (
-										<button
-											key={v.id}
-											type="button"
-											onClick={() => setVector(v.id)}
-											className={`flex flex-col justify-between rounded-md border p-3 text-left transition-colors ${
-												isSelected
-													? `${v.activeBorder}${v.activeBg} ring-1 ring-current`
-													: "border-zinc-200 bg-zinc-50/50 hover:border-zinc-300 hover:bg-zinc-100/50 dark:border-zinc-800 dark:bg-zinc-800/40 dark:hover:border-zinc-700"
-											}`}
-										>
-											<div className="space-y-1">
-												<div className="flex items-center justify-between">
-													<span className="font-semibold text-xs text-zinc-900 dark:text-zinc-100">
-														{v.name}
-													</span>
-													{isSelected && (
-														<CheckCircle2
-															className={`h-3.5 w-3.5 ${v.color}`}
-														/>
-													)}
-												</div>
-												<p className="text-[11px] text-zinc-500 leading-snug dark:text-zinc-400">
-													{v.description}
-												</p>
-											</div>
-											<span
-												className={`mt-2 inline-block w-fit rounded-sm px-1.5 py-0.5 font-medium text-[10px] ${
-													isSelected
-														? `${v.color} bg-white dark:bg-zinc-800`
-														: "bg-zinc-200 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300"
-												}`}
-											>
-												{v.tag}
-											</span>
-										</button>
-									);
-								})}
+							<div className="flex flex-wrap gap-2 pt-1">
+								{EXAMPLE_TOPICS.map((ex) => (
+									<button
+										key={ex.title}
+										type="button"
+										onClick={() => applyExampleTopic(ex)}
+										className="group flex items-center gap-2 rounded-md border border-zinc-200 bg-zinc-50/70 px-2.5 py-1.5 text-left text-xs transition-colors hover:border-zinc-300 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-800/50 dark:hover:border-zinc-700 dark:hover:bg-zinc-800"
+									>
+										<span className="font-medium text-zinc-800 dark:text-zinc-200">
+											{ex.title}
+										</span>
+										<span className="rounded-sm bg-zinc-200 px-1 py-0.2 font-medium text-[10px] text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">
+											{ex.category}
+										</span>
+									</button>
+								))}
 							</div>
 						</div>
-					</div>
 
-					{/* Right Column: Platform & Engine Controls (5 cols) */}
-					<div className="space-y-5 lg:col-span-5">
-						<div className="space-y-5 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-							{/* Platforms */}
-							<div className="space-y-2">
-								<div className="flex items-center justify-between">
-									<span className="font-medium text-xs text-zinc-700 dark:text-zinc-300">
-										Target Platforms
-									</span>
-									<span className="text-[11px] text-zinc-500">
-										{selectedPlatforms.length}/3 selected
-									</span>
+						{/* Input & Configurations Grid */}
+						<div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+							{/* Left Column: Topic & Vectors (7 cols) */}
+							<div className="space-y-5 lg:col-span-7">
+								{/* Topic Input */}
+								<div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+									<Label
+										htmlFor="topic-input"
+										className="block font-medium text-xs text-zinc-700 dark:text-zinc-300"
+									>
+										Target Topic or Scenario Prompt
+									</Label>
+									<Input
+										id="topic-input"
+										value={topic}
+										onChange={(e) => setTopic(e.target.value)}
+										placeholder="e.g. Central Bank declares emergency digital currency restrictions..."
+										className="mt-2 h-10 rounded-md border border-zinc-300 bg-white px-3 text-sm focus:border-zinc-900 focus:ring-0 dark:border-zinc-700 dark:bg-zinc-800 dark:focus:border-zinc-100"
+									/>
 								</div>
 
-								<div className="grid grid-cols-3 gap-2">
-									{(
-										[
-											{
-												id: "twitter",
-												label: "𝕏 Twitter",
-												aspect: "16:9",
-											},
-											{
-												id: "instagram",
-												label: "Instagram",
-												aspect: "1:1",
-											},
-											{ id: "tiktok", label: "TikTok", aspect: "9:16" },
-										] as const
-									).map((p) => {
-										const isSelected = selectedPlatforms.includes(p.id);
-										return (
-											<button
-												key={p.id}
-												type="button"
-												onClick={() => togglePlatform(p.id)}
-												className={`flex flex-col items-center justify-center rounded-md border py-2 text-xs transition-colors ${
-													isSelected
-														? "border-zinc-900 bg-zinc-900 font-medium text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900"
-														: "border-zinc-200 bg-zinc-50 text-zinc-600 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-800/40 dark:text-zinc-400"
-												}`}
-											>
-												<span>{p.label}</span>
-												<span className="text-[10px] opacity-70">
-													{p.aspect}
-												</span>
-											</button>
-										);
-									})}
+								{/* Manipulation Vector Selector */}
+								<div className="space-y-2.5 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+									<div className="flex items-center justify-between">
+										<span className="font-medium text-xs text-zinc-700 dark:text-zinc-300">
+											Manipulation Vector
+										</span>
+										<span className="text-[11px] text-zinc-500">
+											Selected: {VECTORS.find((v) => v.id === vector)?.tag}
+										</span>
+									</div>
+
+									<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+										{VECTORS.map((v) => {
+											const isSelected = vector === v.id;
+											return (
+												<button
+													key={v.id}
+													type="button"
+													onClick={() => setVector(v.id)}
+													className={`flex flex-col justify-between rounded-md border p-3 text-left transition-colors ${
+														isSelected
+															? `${v.activeBorder}${v.activeBg} ring-1 ring-current`
+															: "border-zinc-200 bg-zinc-50/50 hover:border-zinc-300 hover:bg-zinc-100/50 dark:border-zinc-800 dark:bg-zinc-800/40 dark:hover:border-zinc-700"
+													}`}
+												>
+													<div className="space-y-1">
+														<div className="flex items-center justify-between">
+															<span className="font-semibold text-xs text-zinc-900 dark:text-zinc-100">
+																{v.name}
+															</span>
+															{isSelected && (
+																<CheckCircle2
+																	className={`h-3.5 w-3.5 ${v.color}`}
+																/>
+															)}
+														</div>
+														<p className="text-[11px] text-zinc-500 leading-snug dark:text-zinc-400">
+															{v.description}
+														</p>
+													</div>
+													<span
+														className={`mt-2 inline-block w-fit rounded-sm px-1.5 py-0.5 font-medium text-[10px] ${
+															isSelected
+																? `${v.color} bg-white dark:bg-zinc-800`
+																: "bg-zinc-200 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300"
+														}`}
+													>
+														{v.tag}
+													</span>
+												</button>
+											);
+										})}
+									</div>
 								</div>
 							</div>
 
-							{/* Spark 2 Media Settings */}
-							<div className="space-y-3 border-zinc-100 border-t pt-3 dark:border-zinc-800">
-								<span className="block font-medium text-[11px] text-zinc-500 uppercase tracking-wider">
-									Synthetic Media
-								</span>
-
-								{/* Image toggle */}
-								<div className="rounded-md border border-zinc-200 bg-zinc-50/50 p-3 dark:border-zinc-800 dark:bg-zinc-800/30">
-									<div className="flex items-center justify-between">
-										<span className="font-medium text-xs text-zinc-800 dark:text-zinc-200">
-											Image Asset (Flux)
-										</span>
-										<input
-											type="checkbox"
-											checked={includeImage}
-											onChange={(e) => setIncludeImage(e.target.checked)}
-											className="h-4 w-4 cursor-pointer rounded border-zinc-300 text-zinc-900 accent-zinc-900 focus:ring-0 dark:border-zinc-600 dark:accent-zinc-100"
-										/>
-									</div>
-
-									{includeImage && (
-										<div className="flex items-center gap-2 pt-2 text-[11px]">
-											<span className="text-zinc-500">Model:</span>
-											<div className="flex rounded-md border border-zinc-200 bg-white p-0.5 dark:border-zinc-700 dark:bg-zinc-800">
-												<button
-													type="button"
-													onClick={() => setMediaModel("flux")}
-													className={`rounded-sm px-2 py-0.5 font-medium transition-colors ${
-														mediaModel === "flux"
-															? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-															: "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400"
-													}`}
-												>
-													Flux Schnell
-												</button>
-												<button
-													type="button"
-													onClick={() => setMediaModel("flux2")}
-													className={`rounded-sm px-2 py-0.5 font-medium transition-colors ${
-														mediaModel === "flux2"
-															? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-															: "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400"
-													}`}
-												>
-													Flux.2 Dev
-												</button>
-											</div>
+							{/* Right Column: Platform & Engine Controls (5 cols) */}
+							<div className="space-y-5 lg:col-span-5">
+								<div className="space-y-5 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+									{/* Platforms */}
+									<div className="space-y-2">
+										<div className="flex items-center justify-between">
+											<span className="font-medium text-xs text-zinc-700 dark:text-zinc-300">
+												Target Platforms
+											</span>
+											<span className="text-[11px] text-zinc-500">
+												{selectedPlatforms.length}/3 selected
+											</span>
 										</div>
-									)}
-								</div>
 
-								{/* Video toggle */}
-								<div className="rounded-md border border-zinc-200 bg-zinc-50/50 p-3 dark:border-zinc-800 dark:bg-zinc-800/30">
-									<div className="flex items-center justify-between">
-										<span className="font-medium text-xs text-zinc-800 dark:text-zinc-200">
-											Synthetic Video (Wan 2.2 + Dialogue Audio)
-										</span>
-										<input
-											type="checkbox"
-											checked={includeVideo}
-											onChange={(e) => setIncludeVideo(e.target.checked)}
-											className="h-4 w-4 cursor-pointer rounded border-zinc-300 text-zinc-900 accent-zinc-900 focus:ring-0 dark:border-zinc-600 dark:accent-zinc-100"
-										/>
+										<div className="grid grid-cols-3 gap-2">
+											{(
+												[
+													{
+														id: "twitter",
+														label: "𝕏 Twitter",
+														aspect: "16:9",
+													},
+													{
+														id: "instagram",
+														label: "Instagram",
+														aspect: "1:1",
+													},
+													{ id: "tiktok", label: "TikTok", aspect: "9:16" },
+												] as const
+											).map((p) => {
+												const isSelected = selectedPlatforms.includes(p.id);
+												return (
+													<button
+														key={p.id}
+														type="button"
+														onClick={() => togglePlatform(p.id)}
+														className={`flex flex-col items-center justify-center rounded-md border py-2 text-xs transition-colors ${
+															isSelected
+																? "border-zinc-900 bg-zinc-900 font-medium text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900"
+																: "border-zinc-200 bg-zinc-50 text-zinc-600 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-800/40 dark:text-zinc-400"
+														}`}
+													>
+														<span>{p.label}</span>
+														<span className="text-[10px] opacity-70">
+															{p.aspect}
+														</span>
+													</button>
+												);
+											})}
+										</div>
 									</div>
-									{includeVideo && (
-										<div className="space-y-2 pt-2">
-											{/* Duration Selector */}
-											<div className="flex items-center justify-between text-[11px]">
-												<span className="text-zinc-500">Duration:</span>
-												<div className="flex rounded-md border border-zinc-200 bg-white p-0.5 dark:border-zinc-700 dark:bg-zinc-800">
-													{([10, 12, 15] as const).map((d) => (
+
+									{/* Spark 2 Media Settings */}
+									<div className="space-y-3 border-zinc-100 border-t pt-3 dark:border-zinc-800">
+										<span className="block font-medium text-[11px] text-zinc-500 uppercase tracking-wider">
+											Synthetic Media
+										</span>
+
+										{/* Image toggle */}
+										<div className="rounded-md border border-zinc-200 bg-zinc-50/50 p-3 dark:border-zinc-800 dark:bg-zinc-800/30">
+											<div className="flex items-center justify-between">
+												<span className="font-medium text-xs text-zinc-800 dark:text-zinc-200">
+													Image Asset (Flux)
+												</span>
+												<input
+													type="checkbox"
+													checked={includeImage}
+													onChange={(e) => setIncludeImage(e.target.checked)}
+													className="h-4 w-4 cursor-pointer rounded border-zinc-300 text-zinc-900 accent-zinc-900 focus:ring-0 dark:border-zinc-600 dark:accent-zinc-100"
+												/>
+											</div>
+
+											{includeImage && (
+												<div className="flex items-center gap-2 pt-2 text-[11px]">
+													<span className="text-zinc-500">Model:</span>
+													<div className="flex rounded-md border border-zinc-200 bg-white p-0.5 dark:border-zinc-700 dark:bg-zinc-800">
 														<button
-															key={d}
 															type="button"
-															onClick={() => setVideoDuration(d)}
+															onClick={() => setMediaModel("flux")}
 															className={`rounded-sm px-2 py-0.5 font-medium transition-colors ${
-																videoDuration === d
+																mediaModel === "flux"
 																	? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
 																	: "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400"
 															}`}
 														>
-															{d}s
+															Flux Schnell
+														</button>
+														<button
+															type="button"
+															onClick={() => setMediaModel("flux2")}
+															className={`rounded-sm px-2 py-0.5 font-medium transition-colors ${
+																mediaModel === "flux2"
+																	? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+																	: "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400"
+															}`}
+														>
+															Flux.2 Dev
+														</button>
+													</div>
+												</div>
+											)}
+										</div>
+
+										{/* Video toggle */}
+										<div className="rounded-md border border-zinc-200 bg-zinc-50/50 p-3 dark:border-zinc-800 dark:bg-zinc-800/30">
+											<div className="flex items-center justify-between">
+												<span className="font-medium text-xs text-zinc-800 dark:text-zinc-200">
+													Synthetic Video (Wan 2.2 + Dialogue Audio)
+												</span>
+												<input
+													type="checkbox"
+													checked={includeVideo}
+													onChange={(e) => setIncludeVideo(e.target.checked)}
+													className="h-4 w-4 cursor-pointer rounded border-zinc-300 text-zinc-900 accent-zinc-900 focus:ring-0 dark:border-zinc-600 dark:accent-zinc-100"
+												/>
+											</div>
+											{includeVideo && (
+												<div className="space-y-2 pt-2">
+													{/* Duration Selector */}
+													<div className="flex items-center justify-between text-[11px]">
+														<span className="text-zinc-500">Duration:</span>
+														<div className="flex rounded-md border border-zinc-200 bg-white p-0.5 dark:border-zinc-700 dark:bg-zinc-800">
+															{([10, 12, 15] as const).map((d) => (
+																<button
+																	key={d}
+																	type="button"
+																	onClick={() => setVideoDuration(d)}
+																	className={`rounded-sm px-2 py-0.5 font-medium transition-colors ${
+																		videoDuration === d
+																			? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+																			: "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400"
+																	}`}
+																>
+																	{d}s
+																</button>
+															))}
+														</div>
+													</div>
+													<p className="text-[10px] text-zinc-400">
+														Photorealistic Wan 2.2 ({videoDuration}s) with
+														topic-aligned dialogue acoustics and uni_pc sampling
+													</p>
+												</div>
+											)}
+										</div>
+									</div>
+
+									{/* 30-Day Cache Preference Control */}
+									<div className="space-y-1.5 border-zinc-100 border-t pt-3 dark:border-zinc-800">
+										<div className="flex items-center justify-between">
+											<span className="font-medium text-xs text-zinc-800 dark:text-zinc-200">
+												Use 30-Day Media Cache
+											</span>
+											<input
+												type="checkbox"
+												checked={useCache}
+												onChange={(e) => setUseCache(e.target.checked)}
+												className="h-4 w-4 cursor-pointer rounded border-zinc-300 text-zinc-900 accent-zinc-900 focus:ring-0 dark:border-zinc-600 dark:accent-zinc-100"
+											/>
+										</div>
+										<p className="text-[11px] text-zinc-500">
+											Reuses existing matching media files instead of
+											re-rendering. Uncheck to force fresh generation.
+										</p>
+									</div>
+
+									{/* Primary Generate Button */}
+									<button
+										type="button"
+										onClick={() => handleGenerate(false)}
+										disabled={isGenerating || !topic.trim()}
+										className="flex h-11 w-full items-center justify-center gap-2 rounded-md bg-zinc-900 font-medium text-white text-xs transition-colors hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+									>
+										{isGenerating ? (
+											<span className="flex items-center gap-2">
+												<Loader2 className="h-4 w-4 animate-spin" />
+												Generating mock news payload...
+											</span>
+										) : (
+											<span className="flex items-center gap-2">
+												<Sparkles className="h-4 w-4" />
+												Synthesize Mock News
+											</span>
+										)}
+									</button>
+								</div>
+
+								{/* Progress Bar */}
+								{isGenerating && (
+									<div className="space-y-2.5 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+										<div className="flex items-center justify-between text-xs">
+											<span className="font-medium text-zinc-700 dark:text-zinc-300">
+												{progressStep || "Processing..."}
+											</span>
+											<span className="font-mono text-zinc-500">
+												{progress}%
+											</span>
+										</div>
+
+										<div className="h-2 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+											<div
+												className="h-full bg-zinc-900 transition-all duration-300 dark:bg-zinc-100"
+												style={{ width: `${progress}%` }}
+											/>
+										</div>
+									</div>
+								)}
+							</div>
+						</div>
+
+						{/* Results Section */}
+						{result && (
+							<div className="space-y-6 pt-4">
+								{/* Headline Banner */}
+								<div className="flex flex-col justify-between gap-4 rounded-lg border border-zinc-200 bg-white p-4 md:flex-row md:items-center dark:border-zinc-800 dark:bg-zinc-900">
+									<div className="space-y-1">
+										<div className="flex items-center gap-2">
+											<span className="font-medium text-[11px] text-zinc-500 uppercase tracking-wider">
+												Synthesized Headline
+											</span>
+											{result.isCached && (
+												<span className="flex items-center gap-1 rounded-sm bg-emerald-500/10 px-2 py-0.5 font-medium text-[10px] text-emerald-600 dark:text-emerald-400">
+													<Zap className="h-3 w-3" /> Reused 30-Day Cached Media
+												</span>
+											)}
+										</div>
+										<h2 className="font-semibold text-lg text-zinc-900 tracking-tight dark:text-white">
+											{result.headline}
+										</h2>
+									</div>
+
+									<div className="flex shrink-0 flex-wrap items-center gap-2">
+										{/* Button to Force Regenerate if Cached */}
+										{result.isCached && (
+											<button
+												type="button"
+												onClick={() => handleGenerate(true)}
+												disabled={isGenerating}
+												className="flex items-center gap-1.5 rounded-md border border-zinc-300 bg-zinc-50 px-3 py-1.5 font-medium text-xs text-zinc-800 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+											>
+												<RefreshCw className="h-3.5 w-3.5" /> Regenerate Fresh
+											</button>
+										)}
+										<button
+											type="button"
+											onClick={copyCurrentPost}
+											className="flex items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3 py-1.5 font-medium text-xs text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-750"
+										>
+											<Copy className="h-3.5 w-3.5" /> Copy Text
+										</button>
+										<button
+											type="button"
+											onClick={downloadJsonPayload}
+											className="flex items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3 py-1.5 font-medium text-xs text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-750"
+										>
+											<Download className="h-3.5 w-3.5" /> Export JSON
+										</button>
+									</div>
+								</div>
+
+								{/* 2-Column Split: Draft Text & Media Asset */}
+								<div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+									{/* Draft Text Preview (7 cols) */}
+									<div className="space-y-3 rounded-lg border border-zinc-200 bg-white p-4 lg:col-span-7 dark:border-zinc-800 dark:bg-zinc-900">
+										<div className="flex items-center justify-between border-zinc-100 border-b pb-2 dark:border-zinc-800">
+											<div className="flex items-center gap-2">
+												<span className="font-medium text-xs text-zinc-700 dark:text-zinc-300">
+													Draft Preview:
+												</span>
+												<div className="flex gap-1">
+													{selectedPlatforms.map((p) => (
+														<button
+															key={p}
+															type="button"
+															onClick={() => setPreviewPlatform(p)}
+															className={`rounded-sm px-2 py-0.5 font-medium text-[11px] capitalize transition-colors ${
+																previewPlatform === p
+																	? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+																	: "text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+															}`}
+														>
+															{p}
 														</button>
 													))}
 												</div>
 											</div>
-											<p className="text-[10px] text-zinc-400">
-												Photorealistic Wan 2.2 ({videoDuration}s) with topic-aligned dialogue acoustics and uni_pc sampling
+											<span className="font-mono text-[11px] text-zinc-400">
+												{
+													(
+														result.platforms?.[previewPlatform]?.text ||
+														result.postContent
+													).length
+												}{" "}
+												chars
+											</span>
+										</div>
+
+										<Textarea
+											value={
+												result.platforms?.[previewPlatform]?.text ||
+												result.postContent
+											}
+											readOnly
+											rows={7}
+											className="w-full resize-none rounded-md border border-zinc-200 bg-zinc-50/60 p-3 text-sm leading-relaxed dark:border-zinc-800 dark:bg-zinc-800/50"
+										/>
+									</div>
+
+									{/* Media Asset Preview (5 cols) */}
+									<div className="space-y-4 lg:col-span-5">
+										{/* Image Box */}
+										<div className="space-y-2.5 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+											<div className="flex items-center justify-between">
+												<div className="flex items-center gap-2">
+													<span className="font-medium text-xs text-zinc-700 dark:text-zinc-300">
+														Generated Image Asset
+													</span>
+													{result.isCached && (
+														<span className="rounded-sm bg-zinc-100 px-1.5 py-0.5 font-mono text-[10px] text-zinc-500 dark:bg-zinc-800">
+															cached
+														</span>
+													)}
+												</div>
+												{result.image && (
+													<span className="font-mono text-[10px] text-zinc-400">
+														{result.image.sizeKb} KB
+													</span>
+												)}
+											</div>
+
+											{result.image?.url ? (
+												<div className="space-y-2.5">
+													<div className="max-h-[220px] overflow-hidden rounded-md border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-950">
+														<img
+															src={result.image.url}
+															alt="Synthesized asset"
+															className="h-full w-full object-cover"
+														/>
+													</div>
+													<div className="flex items-center justify-between text-xs">
+														<span className="max-w-[180px] truncate font-mono text-[11px] text-zinc-500">
+															{result.image.filename}
+														</span>
+														<button
+															type="button"
+															onClick={() =>
+																downloadMediaFile(
+																	result.image?.url,
+																	result.image?.filename,
+																)
+															}
+															className="rounded-md border border-zinc-200 px-2 py-0.5 text-xs text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+														>
+															Download
+														</button>
+													</div>
+													{/* Associated Generation Prompt */}
+													{(result.image.prompt ||
+														result.suggestedImagePrompt) && (
+														<div className="rounded-md border border-zinc-100 bg-zinc-50/80 p-2.5 dark:border-zinc-800/80 dark:bg-zinc-800/40">
+															<div className="mb-1 flex items-center justify-between text-[10px] text-zinc-500">
+																<span className="font-semibold uppercase tracking-wider">
+																	Associated Prompt
+																</span>
+																<div className="flex items-center gap-1.5">
+																	{result.image.model && (
+																		<span className="rounded-sm bg-zinc-200 px-1 py-0.5 font-mono text-[9px] text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">
+																			{result.image.model === "flux2"
+																				? "Flux.2 Dev"
+																				: "Flux Schnell"}
+																		</span>
+																	)}
+																	<button
+																		type="button"
+																		onClick={() => {
+																			const p =
+																				result.image?.prompt ||
+																				result.suggestedImagePrompt ||
+																				"";
+																			navigator.clipboard.writeText(p);
+																			toast.success(
+																				"Image prompt copied to clipboard",
+																			);
+																		}}
+																		className="flex items-center gap-1 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+																	>
+																		<Copy className="h-2.5 w-2.5" />
+																		<span>Copy</span>
+																	</button>
+																</div>
+															</div>
+															<p className="line-clamp-3 text-[11px] text-zinc-700 leading-relaxed dark:text-zinc-300">
+																{result.image.prompt ||
+																	result.suggestedImagePrompt}
+															</p>
+														</div>
+													)}
+												</div>
+											) : (
+												<div className="rounded-md border border-zinc-200 border-dashed p-4 text-center text-xs text-zinc-400 dark:border-zinc-800">
+													No image asset requested
+												</div>
+											)}
+										</div>
+
+										{/* Video Box */}
+										{includeVideo && (
+											<div className="space-y-2.5 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+												<div className="flex items-center justify-between">
+													<div className="flex items-center gap-2">
+														<span className="font-medium text-xs text-zinc-700 dark:text-zinc-300">
+															Generated Video Asset
+														</span>
+														{result.isCached && (
+															<span className="rounded-sm bg-zinc-100 px-1.5 py-0.5 font-mono text-[10px] text-zinc-500 dark:bg-zinc-800">
+																cached
+															</span>
+														)}
+													</div>
+													{result.video && (
+														<span className="font-mono text-[10px] text-zinc-400">
+															{result.video.sizeKb} KB
+														</span>
+													)}
+												</div>
+
+												{result.video?.url ? (
+													<div className="space-y-2.5">
+														<div className="max-h-[220px] overflow-hidden rounded-md border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-950">
+															<video
+																src={result.video.url}
+																controls
+																autoPlay
+																loop
+																muted
+																className="h-full w-full object-cover"
+															/>
+														</div>
+														<div className="flex items-center justify-between text-xs">
+															<span className="max-w-[180px] truncate font-mono text-[11px] text-zinc-500">
+																{result.video.filename}
+															</span>
+															<button
+																type="button"
+																onClick={() =>
+																	downloadMediaFile(
+																		result.video?.url,
+																		result.video?.filename,
+																	)
+																}
+																className="rounded-md border border-zinc-200 px-2 py-0.5 text-xs text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+															>
+																Download
+															</button>
+														</div>
+														{/* Associated Video Generation Prompt */}
+														{(result.video.prompt ||
+															result.suggestedVideoPrompt ||
+															result.suggestedImagePrompt) && (
+															<div className="rounded-md border border-zinc-100 bg-zinc-50/80 p-2.5 dark:border-zinc-800/80 dark:bg-zinc-800/40">
+																<div className="mb-1 flex items-center justify-between text-[10px] text-zinc-500">
+																	<span className="font-semibold uppercase tracking-wider">
+																		Associated Prompt
+																	</span>
+																	<div className="flex items-center gap-1.5">
+																		<span className="rounded-sm bg-zinc-200 px-1 py-0.5 font-mono text-[9px] text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">
+																			Wan 2.2 + Audio
+																		</span>
+																		<button
+																			type="button"
+																			onClick={() => {
+																				const p =
+																					result.video?.prompt ||
+																					result.suggestedVideoPrompt ||
+																					result.suggestedImagePrompt ||
+																					"";
+																				navigator.clipboard.writeText(p);
+																				toast.success(
+																					"Video prompt copied to clipboard",
+																				);
+																			}}
+																			className="flex items-center gap-1 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+																		>
+																			<Copy className="h-2.5 w-2.5" />
+																			<span>Copy</span>
+																		</button>
+																	</div>
+																</div>
+																<p className="line-clamp-3 text-[11px] text-zinc-700 leading-relaxed dark:text-zinc-300">
+																	{result.video.prompt ||
+																		result.suggestedVideoPrompt ||
+																		result.suggestedImagePrompt}
+																</p>
+															</div>
+														)}
+													</div>
+												) : (
+													<div className="rounded-md border border-zinc-200 border-dashed p-4 text-center text-xs text-zinc-400 dark:border-zinc-800">
+														No video asset requested
+													</div>
+												)}
+											</div>
+										)}
+									</div>
+								</div>
+
+								{/* Live Social Previews Container */}
+								<div className="space-y-4 rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+									<div className="flex items-center justify-between border-zinc-100 border-b pb-3 dark:border-zinc-800">
+										<div>
+											<h3 className="font-medium text-sm text-zinc-900 dark:text-zinc-100">
+												Authentic Feed Simulation
+											</h3>
+											<p className="text-xs text-zinc-500">
+												Preview how the content renders in social media feeds.
 											</p>
 										</div>
-									)}
-								</div>
-							</div>
 
-							{/* 30-Day Cache Preference Control */}
-							<div className="space-y-1.5 border-zinc-100 border-t pt-3 dark:border-zinc-800">
-								<div className="flex items-center justify-between">
-									<span className="font-medium text-xs text-zinc-800 dark:text-zinc-200">
-										Use 30-Day Media Cache
-									</span>
-									<input
-										type="checkbox"
-										checked={useCache}
-										onChange={(e) => setUseCache(e.target.checked)}
-										className="h-4 w-4 cursor-pointer rounded border-zinc-300 text-zinc-900 accent-zinc-900 focus:ring-0 dark:border-zinc-600 dark:accent-zinc-100"
-									/>
-								</div>
-								<p className="text-[11px] text-zinc-500">
-									Reuses existing matching media files instead of re-rendering.
-									Uncheck to force fresh generation.
-								</p>
-							</div>
-
-							{/* Primary Generate Button */}
-							<button
-								type="button"
-								onClick={() => handleGenerate(false)}
-								disabled={isGenerating || !topic.trim()}
-								className="flex h-11 w-full items-center justify-center gap-2 rounded-md bg-zinc-900 font-medium text-white text-xs transition-colors hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-							>
-								{isGenerating ? (
-									<span className="flex items-center gap-2">
-										<Loader2 className="h-4 w-4 animate-spin" />
-										Generating mock news payload...
-									</span>
-								) : (
-									<span className="flex items-center gap-2">
-										<Sparkles className="h-4 w-4" />
-										Synthesize Mock News
-									</span>
-								)}
-							</button>
-						</div>
-
-						{/* Progress Bar */}
-						{isGenerating && (
-							<div className="space-y-2.5 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-								<div className="flex items-center justify-between text-xs">
-									<span className="font-medium text-zinc-700 dark:text-zinc-300">
-										{progressStep || "Processing..."}
-									</span>
-									<span className="font-mono text-zinc-500">{progress}%</span>
-								</div>
-
-								<div className="h-2 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
-									<div
-										className="h-full bg-zinc-900 transition-all duration-300 dark:bg-zinc-100"
-										style={{ width: `${progress}%` }}
-									/>
-								</div>
-							</div>
-						)}
-					</div>
-				</div>
-
-				{/* Results Section */}
-				{result && (
-					<div className="space-y-6 pt-4">
-						{/* Headline Banner */}
-						<div className="flex flex-col justify-between gap-4 rounded-lg border border-zinc-200 bg-white p-4 md:flex-row md:items-center dark:border-zinc-800 dark:bg-zinc-900">
-							<div className="space-y-1">
-								<div className="flex items-center gap-2">
-									<span className="font-medium text-[11px] text-zinc-500 uppercase tracking-wider">
-										Synthesized Headline
-									</span>
-									{result.isCached && (
-										<span className="flex items-center gap-1 rounded-sm bg-emerald-500/10 px-2 py-0.5 font-medium text-[10px] text-emerald-600 dark:text-emerald-400">
-											<Zap className="h-3 w-3" /> Reused 30-Day Cached Media
-										</span>
-									)}
-								</div>
-								<h2 className="font-semibold text-lg text-zinc-900 tracking-tight dark:text-white">
-									{result.headline}
-								</h2>
-							</div>
-
-							<div className="flex shrink-0 flex-wrap items-center gap-2">
-								{/* Button to Force Regenerate if Cached */}
-								{result.isCached && (
-									<button
-										type="button"
-										onClick={() => handleGenerate(true)}
-										disabled={isGenerating}
-										className="flex items-center gap-1.5 rounded-md border border-zinc-300 bg-zinc-50 px-3 py-1.5 font-medium text-xs text-zinc-800 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
-									>
-										<RefreshCw className="h-3.5 w-3.5" /> Regenerate Fresh
-									</button>
-								)}
-								<button
-									type="button"
-									onClick={copyCurrentPost}
-									className="flex items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3 py-1.5 font-medium text-xs text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-750"
-								>
-									<Copy className="h-3.5 w-3.5" /> Copy Text
-								</button>
-								<button
-									type="button"
-									onClick={downloadJsonPayload}
-									className="flex items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3 py-1.5 font-medium text-xs text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-750"
-								>
-									<Download className="h-3.5 w-3.5" /> Export JSON
-								</button>
-							</div>
-						</div>
-
-						{/* 2-Column Split: Draft Text & Media Asset */}
-						<div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-							{/* Draft Text Preview (7 cols) */}
-							<div className="space-y-3 rounded-lg border border-zinc-200 bg-white p-4 lg:col-span-7 dark:border-zinc-800 dark:bg-zinc-900">
-								<div className="flex items-center justify-between border-zinc-100 border-b pb-2 dark:border-zinc-800">
-									<div className="flex items-center gap-2">
-										<span className="font-medium text-xs text-zinc-700 dark:text-zinc-300">
-											Draft Preview:
-										</span>
-										<div className="flex gap-1">
+										{/* Platform switcher tabs */}
+										<div className="flex rounded-md border border-zinc-200 bg-zinc-50 p-0.5 dark:border-zinc-700 dark:bg-zinc-800">
 											{selectedPlatforms.map((p) => (
 												<button
 													key={p}
 													type="button"
 													onClick={() => setPreviewPlatform(p)}
-													className={`rounded-sm px-2 py-0.5 font-medium text-[11px] capitalize transition-colors ${
+													className={`rounded-sm px-2.5 py-1 font-medium text-xs transition-colors ${
 														previewPlatform === p
-															? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-															: "text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+															? "bg-white text-zinc-900 shadow-xs dark:bg-zinc-700 dark:text-white"
+															: "text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
 													}`}
 												>
-													{p}
+													{p === "twitter"
+														? "𝕏 Twitter"
+														: p === "instagram"
+															? "Instagram"
+															: "TikTok"}
 												</button>
 											))}
 										</div>
 									</div>
-									<span className="font-mono text-[11px] text-zinc-400">
-										{
-											(
-												result.platforms?.[previewPlatform]?.text ||
-												result.postContent
-											).length
-										}{" "}
-										chars
-									</span>
-								</div>
 
-								<Textarea
-									value={
-										result.platforms?.[previewPlatform]?.text ||
-										result.postContent
-									}
-									readOnly
-									rows={7}
-									className="w-full resize-none rounded-md border border-zinc-200 bg-zinc-50/60 p-3 text-sm leading-relaxed dark:border-zinc-800 dark:bg-zinc-800/50"
-								/>
-							</div>
-
-							{/* Media Asset Preview (5 cols) */}
-							<div className="space-y-4 lg:col-span-5">
-								{/* Image Box */}
-								<div className="space-y-2.5 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-									<div className="flex items-center justify-between">
-										<div className="flex items-center gap-2">
-											<span className="font-medium text-xs text-zinc-700 dark:text-zinc-300">
-												Generated Image Asset
-											</span>
-											{result.isCached && (
-												<span className="rounded-sm bg-zinc-100 px-1.5 py-0.5 font-mono text-[10px] text-zinc-500 dark:bg-zinc-800">
-													cached
-												</span>
-											)}
-										</div>
-										{result.image && (
-											<span className="font-mono text-[10px] text-zinc-400">
-												{result.image.sizeKb} KB
-											</span>
-										)}
+									{/* Feed Card Rendering Container using shared DisinfoSocialMockCard */}
+									<div className="flex justify-center p-2 sm:p-4">
+										<DisinfoSocialMockCard
+											platform={previewPlatform}
+											result={result}
+											image={result.image}
+											video={result.video}
+											activeMediaType={result.video?.url ? "video" : "image"}
+										/>
 									</div>
-
-									{result.image?.url ? (
-										<div className="space-y-2.5">
-											<div className="max-h-[220px] overflow-hidden rounded-md border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-950">
-												<img
-													src={result.image.url}
-													alt="Synthesized asset"
-													className="h-full w-full object-cover"
-												/>
-											</div>
-											<div className="flex items-center justify-between text-xs">
-												<span className="max-w-[180px] truncate font-mono text-[11px] text-zinc-500">
-													{result.image.filename}
-												</span>
-												<button
-													type="button"
-													onClick={() =>
-														downloadMediaFile(
-															result.image?.url,
-															result.image?.filename,
-														)
-													}
-													className="rounded-md border border-zinc-200 px-2 py-0.5 text-xs text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-												>
-													Download
-												</button>
-											</div>
-											{/* Associated Generation Prompt */}
-											{(result.image.prompt || result.suggestedImagePrompt) && (
-												<div className="rounded-md border border-zinc-100 bg-zinc-50/80 p-2.5 dark:border-zinc-800/80 dark:bg-zinc-800/40">
-													<div className="mb-1 flex items-center justify-between text-[10px] text-zinc-500">
-														<span className="font-semibold uppercase tracking-wider">
-															Associated Prompt
-														</span>
-														<div className="flex items-center gap-1.5">
-															{result.image.model && (
-																<span className="rounded-sm bg-zinc-200 px-1 py-0.5 font-mono text-[9px] text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">
-																	{result.image.model === "flux2"
-																		? "Flux.2 Dev"
-																		: "Flux Schnell"}
-																</span>
-															)}
-															<button
-																type="button"
-																onClick={() => {
-																	const p =
-																		result.image?.prompt ||
-																		result.suggestedImagePrompt ||
-																		"";
-																	navigator.clipboard.writeText(p);
-																	toast.success(
-																		"Image prompt copied to clipboard",
-																	);
-																}}
-																className="flex items-center gap-1 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-															>
-																<Copy className="h-2.5 w-2.5" />
-																<span>Copy</span>
-															</button>
-														</div>
-													</div>
-													<p className="line-clamp-3 text-[11px] text-zinc-700 leading-relaxed dark:text-zinc-300">
-														{result.image.prompt || result.suggestedImagePrompt}
-													</p>
-												</div>
-											)}
-										</div>
-									) : (
-										<div className="rounded-md border border-zinc-200 border-dashed p-4 text-center text-xs text-zinc-400 dark:border-zinc-800">
-											No image asset requested
-										</div>
-									)}
-								</div>
-
-								{/* Video Box */}
-								{includeVideo && (
-									<div className="space-y-2.5 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-										<div className="flex items-center justify-between">
-											<div className="flex items-center gap-2">
-												<span className="font-medium text-xs text-zinc-700 dark:text-zinc-300">
-													Generated Video Asset
-												</span>
-												{result.isCached && (
-													<span className="rounded-sm bg-zinc-100 px-1.5 py-0.5 font-mono text-[10px] text-zinc-500 dark:bg-zinc-800">
-														cached
-													</span>
-												)}
-											</div>
-											{result.video && (
-												<span className="font-mono text-[10px] text-zinc-400">
-													{result.video.sizeKb} KB
-												</span>
-											)}
-										</div>
-
-										{result.video?.url ? (
-											<div className="space-y-2.5">
-												<div className="max-h-[220px] overflow-hidden rounded-md border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-950">
-													<video
-														src={result.video.url}
-														controls
-														autoPlay
-														loop
-														muted
-														className="h-full w-full object-cover"
-													/>
-												</div>
-												<div className="flex items-center justify-between text-xs">
-													<span className="max-w-[180px] truncate font-mono text-[11px] text-zinc-500">
-														{result.video.filename}
-													</span>
-													<button
-														type="button"
-														onClick={() =>
-															downloadMediaFile(
-																result.video?.url,
-																result.video?.filename,
-															)
-														}
-														className="rounded-md border border-zinc-200 px-2 py-0.5 text-xs text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-													>
-														Download
-													</button>
-												</div>
-												{/* Associated Video Generation Prompt */}
-												{(result.video.prompt ||
-													result.suggestedVideoPrompt ||
-													result.suggestedImagePrompt) && (
-													<div className="rounded-md border border-zinc-100 bg-zinc-50/80 p-2.5 dark:border-zinc-800/80 dark:bg-zinc-800/40">
-														<div className="mb-1 flex items-center justify-between text-[10px] text-zinc-500">
-															<span className="font-semibold uppercase tracking-wider">
-																Associated Prompt
-															</span>
-															<div className="flex items-center gap-1.5">
-																<span className="rounded-sm bg-zinc-200 px-1 py-0.5 font-mono text-[9px] text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">
-																	Wan 2.2 + Audio
-																</span>
-																<button
-																	type="button"
-																	onClick={() => {
-																		const p =
-																			result.video?.prompt ||
-																			result.suggestedVideoPrompt ||
-																			result.suggestedImagePrompt ||
-																			"";
-																		navigator.clipboard.writeText(p);
-																		toast.success(
-																			"Video prompt copied to clipboard",
-																		);
-																	}}
-																	className="flex items-center gap-1 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-																>
-																	<Copy className="h-2.5 w-2.5" />
-																	<span>Copy</span>
-																</button>
-															</div>
-														</div>
-														<p className="line-clamp-3 text-[11px] text-zinc-700 leading-relaxed dark:text-zinc-300">
-															{result.video.prompt ||
-																result.suggestedVideoPrompt ||
-																result.suggestedImagePrompt}
-														</p>
-													</div>
-												)}
-											</div>
-										) : (
-											<div className="rounded-md border border-zinc-200 border-dashed p-4 text-center text-xs text-zinc-400 dark:border-zinc-800">
-												No video asset requested
-											</div>
-										)}
-									</div>
-								)}
-							</div>
-						</div>
-
-						{/* Live Social Previews Container */}
-						<div className="space-y-4 rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-							<div className="flex items-center justify-between border-zinc-100 border-b pb-3 dark:border-zinc-800">
-								<div>
-									<h3 className="font-medium text-sm text-zinc-900 dark:text-zinc-100">
-										Authentic Feed Simulation
-									</h3>
-									<p className="text-xs text-zinc-500">
-										Preview how the content renders in social media feeds.
-									</p>
-								</div>
-
-								{/* Platform switcher tabs */}
-								<div className="flex rounded-md border border-zinc-200 bg-zinc-50 p-0.5 dark:border-zinc-700 dark:bg-zinc-800">
-									{selectedPlatforms.map((p) => (
-										<button
-											key={p}
-											type="button"
-											onClick={() => setPreviewPlatform(p)}
-											className={`rounded-sm px-2.5 py-1 font-medium text-xs transition-colors ${
-												previewPlatform === p
-													? "bg-white text-zinc-900 shadow-xs dark:bg-zinc-700 dark:text-white"
-													: "text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
-											}`}
-										>
-											{p === "twitter"
-												? "𝕏 Twitter"
-												: p === "instagram"
-													? "Instagram"
-													: "TikTok"}
-										</button>
-									))}
 								</div>
 							</div>
-
-							{/* Feed Card Rendering Container using shared DisinfoSocialMockCard */}
-							<div className="flex justify-center p-2 sm:p-4">
-								<DisinfoSocialMockCard
-									platform={previewPlatform}
-									result={result}
-									image={result.image}
-									video={result.video}
-									activeMediaType={result.video?.url ? "video" : "image"}
-								/>
-							</div>
-						</div>
-					</div>
-				)}
+						)}
 					</>
 				)}
 
