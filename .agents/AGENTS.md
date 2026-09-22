@@ -79,11 +79,12 @@ This document serves as the persistent repository reference for One-Post, captur
 - **Durations & Frame Rates**:
   - Enforced minimum **10 seconds** (`targetSec = Math.max(10, videoDuration)`).
   - Presets: `[10s]` (161 frames at 16fps), `[12s]` (193 frames), `[15s]` (241 frames).
-- **Dialogue-Aligned Audio**:
+- **Dialogue-Aligned Cinematic Audio**:
   - Engine: **Stable Audio Open 1.0** (`stable_audio_open_1.0.safetensors` + `t5_base.safetensors`).
+  - Loudness Normalizer: `NormalizeAudioLoudness` (`lufs: -14.0`) to guarantee broadcast audio loudness.
   - Multiplexer: `VHS_VideoCombine` encoding H.264 MP4 with synchronized stereo audio track.
-  - Negative Audio Conditioning: `cinematic orchestra, dramatic film score, musical soundtrack, synth, drums, harsh distortion, clipping` (avoids dramatic music, allowing natural vocal dialogue).
-  - Positive Audio Prompt: Synthesized spokesperson dialogue quoting the headline in newsroom/press-conference acoustics.
+  - Negative Audio Conditioning: `harsh digital clipping, mumble, muffled, silent, glitch, ear rape, low quality noise, distortion`.
+  - Positive Audio Prompt: Layered cinematic breaking news score (low bass riser, tense orchestral strings) plus urgent spokesperson dialogue announcement quoting the headline into a press microphone.
 
 ### Runs History & Social Mocks Gallery
 - **Storage**: Sequential JSON records in `public/generated/disinfo_runs_history.json`.

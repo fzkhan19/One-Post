@@ -78,52 +78,52 @@ export function setupTextToImage(
 			onProgress: options?.onProgress,
 			signal: options?.signal,
 		};
-	} else {
-		// Flux.1 Schnell / Flux.1 Dev setup (defaults to Schnell)
-		const wf = deepClone(flux1Wf) as Record<string, any>;
-
-		// Node 2: Positive prompt
-		if (wf["2"]?.inputs) {
-			wf["2"].inputs.text = prompt;
-		}
-		// Node 4: Empty latent dimensions
-		if (wf["4"]?.inputs) {
-			wf["4"].inputs.width = width;
-			wf["4"].inputs.height = height;
-		}
-		// Node 8: KSampler or KSamplerAdvanced steps & seed
-		if (wf["8"]?.inputs) {
-			wf["8"].inputs.steps = steps;
-			if ("end_at_step" in wf["8"].inputs) {
-				wf["8"].inputs.end_at_step = steps;
-			}
-			if ("noise_seed" in wf["8"].inputs) {
-				wf["8"].inputs.noise_seed = seed;
-			} else {
-				wf["8"].inputs.seed = seed;
-			}
-
-			// If Flux Dev, adjust CFG (default is 1 for Schnell)
-			if (model === "flux-dev") {
-				wf["8"].inputs.cfg = 3.5; // Optimal CFG guidance for flux-dev
-				wf["8"].inputs.denoise = 1.0;
-			}
-		}
-		// Node 7: SaveImage output prefix
-		const randomPrefix = `${model}_${Math.floor(Math.random() * 100000)}`;
-		if (wf["7"]?.inputs) {
-			wf["7"].inputs.filename_prefix = randomPrefix;
-		}
-
-		return {
-			workflow: wf,
-			outputNodeId: "7",
-			mediaType: "image",
-			timeout: options?.timeout,
-			onProgress: options?.onProgress,
-			signal: options?.signal,
-		};
 	}
+
+	// Flux.1 Schnell / Flux.1 Dev setup (defaults to Schnell)
+	const wf = deepClone(flux1Wf) as Record<string, any>;
+
+	// Node 2: Positive prompt
+	if (wf["2"]?.inputs) {
+		wf["2"].inputs.text = prompt;
+	}
+	// Node 4: Empty latent dimensions
+	if (wf["4"]?.inputs) {
+		wf["4"].inputs.width = width;
+		wf["4"].inputs.height = height;
+	}
+	// Node 8: KSampler or KSamplerAdvanced steps & seed
+	if (wf["8"]?.inputs) {
+		wf["8"].inputs.steps = steps;
+		if ("end_at_step" in wf["8"].inputs) {
+			wf["8"].inputs.end_at_step = steps;
+		}
+		if ("noise_seed" in wf["8"].inputs) {
+			wf["8"].inputs.noise_seed = seed;
+		} else {
+			wf["8"].inputs.seed = seed;
+		}
+
+		// If Flux Dev, adjust CFG (default is 1 for Schnell)
+		if (model === "flux-dev") {
+			wf["8"].inputs.cfg = 3.5; // Optimal CFG guidance for flux-dev
+			wf["8"].inputs.denoise = 1.0;
+		}
+	}
+	// Node 7: SaveImage output prefix
+	const randomPrefix = `${model}_${Math.floor(Math.random() * 100000)}`;
+	if (wf["7"]?.inputs) {
+		wf["7"].inputs.filename_prefix = randomPrefix;
+	}
+
+	return {
+		workflow: wf,
+		outputNodeId: "7",
+		mediaType: "image",
+		timeout: options?.timeout,
+		onProgress: options?.onProgress,
+		signal: options?.signal,
+	};
 }
 
 // ============================================================================
@@ -162,7 +162,7 @@ export function setupTextToVideo(
 		// Audio prompt & duration (Node 13: Stable Audio positive prompt)
 		const audioPrompt =
 			options?.audioPrompt ||
-			`Clear authentic spokesperson dialogue speaking directly into news microphone: "${prompt}", live news speech, broadcast acoustic environment`;
+			`Dramatic cinematic breaking news broadcast intro, deep bass riser, tense orchestral strings score, authentic spokesperson dialogue announcement into press microphone: "${prompt}", professional television news production sound design`;
 		if (wf["13"]?.inputs) {
 			wf["13"].inputs.text = audioPrompt;
 		}

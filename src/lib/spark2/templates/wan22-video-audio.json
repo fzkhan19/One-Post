@@ -95,7 +95,7 @@
   "14": {
     "class_type": "CLIPTextEncode",
     "inputs": {
-      "text": "cinematic orchestra, dramatic film score, musical soundtrack, synth, drums, harsh distortion, clipping",
+      "text": "harsh digital clipping, mumble, muffled, silent, glitch, ear rape, low quality noise, distortion",
       "clip": ["11", 0]
     }
   },

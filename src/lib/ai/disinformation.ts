@@ -119,9 +119,9 @@ STRICT PROMPT ENGINEERING GUIDELINES FOR THE GENERATION ENGINES:
    - HIGH REALISM & ANATOMY: Insist on natural physical motion, authentic editorial newsroom/field aesthetics, and high-fidelity textures without anatomical distortions.
 
 3. "suggestedAudioPrompt" (Tailored for Stable Audio Open 1.0):
-   - Must be natural, dialogue-centric spoken statement or press conference address reflecting "${topic}".
-   - Format: "Spokesperson speaking clearly into podium microphone: '[Short 1-sentence urgent quote about ${topic}]', authentic television broadcast news acoustics, subtle press conference background camera clicks and quiet room reverberation".
-   - AVOID music, dramatic cinematic orchestral scores, or synth instruments.
+   - You MUST generate a rich, layered cinematic audio cue combining tense broadcast orchestral score and clear spokesperson dialogue specifically citing "${topic}".
+   - Format: "Dramatic cinematic news broadcast score, low sub bass riser, tense orchestral strings and percussion swell, professional newsroom sound design, layered with urgent spokesperson dialogue announcement speaking firmly into podium microphone: '[1-2 sentence spoken announcement about ${topic}]', authentic broadcast television acoustics, high production value trailer audio".
+   - DO NOT make it purely silent or ambient. Include both dramatic cinematic instrumentation and spoken dialogue.
 
 Respond ONLY with a valid, raw JSON object (no markdown code blocks, no backticks, no explanatory text, no <think>...</think> tags).
 The JSON must follow this exact structure:
@@ -147,7 +147,7 @@ The JSON must follow this exact structure:
   },
   "suggestedImagePrompt": "Detailed natural prose photograph describing '${topic}' tailored for Flux",
   "suggestedVideoPrompt": "Cinematic camera movement and continuous motion scene explicitly depicting '${topic}' for Wan 2.2",
-  "suggestedAudioPrompt": "Dialogue statement quoting headline into microphone in realistic newsroom acoustics"
+  "suggestedAudioPrompt": "Dramatic cinematic news broadcast score, low sub bass riser, tense orchestral strings, layered with clear spokesperson dialogue announcement: '[quote about ${topic}]', broadcast television sound design"
 }`;
 
 	let rawJson = "";
