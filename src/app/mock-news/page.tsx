@@ -162,6 +162,7 @@ export default function MockNewsPage() {
 	const [previewPlatform, setPreviewPlatform] = useState<Platform>("twitter");
 	const [includeImage, setIncludeImage] = useState(true);
 	const [includeVideo, setIncludeVideo] = useState(true);
+	const [includeAudio, setIncludeAudio] = useState(true);
 	const [videoDuration, setVideoDuration] = useState<5 | 10 | 12 | 15>(5);
 	const [mediaModel, setMediaModel] = useState<"flux" | "flux2">("flux");
 
@@ -292,7 +293,7 @@ export default function MockNewsPage() {
 				setActiveStage(3);
 				if (includeVideo) {
 					setProgressStep(
-						`Stage 3/3: Rendering Wan 2.2 ${videoDuration}s photorealistic video + dialogue on Spark 2 GPU...`,
+						`Stage 3/3: Rendering Wan 2.2 ${videoDuration}s photorealistic video${includeAudio ? " + dialogue audio" : " (silent)"} on Spark 2 GPU...`,
 					);
 				} else {
 					setProgressStep("Stage 3/3: Assembling social mock structures...");
@@ -311,6 +312,7 @@ export default function MockNewsPage() {
 					platform: selectedPlatforms[0],
 					generateImage: includeImage,
 					generateVideo: includeVideo,
+					includeAudio,
 					videoDuration,
 					mediaModel,
 				}),
@@ -738,9 +740,30 @@ export default function MockNewsPage() {
 															))}
 														</div>
 													</div>
+													{/* Audio Track Toggle */}
+													<div className="flex items-center justify-between border-zinc-200/60 border-t pt-2 dark:border-zinc-700/60">
+														<div className="flex flex-col">
+															<span className="font-medium text-[11px] text-zinc-700 dark:text-zinc-300">
+																Include Dialogue & Audio Track
+															</span>
+															<span className="text-[10px] text-zinc-400">
+																{includeAudio
+																	? "Stable Audio Open news theme + anchor dialogue"
+																	: "Muted / Silent video generation (faster)"}
+															</span>
+														</div>
+														<input
+															type="checkbox"
+															checked={includeAudio}
+															onChange={(e) => setIncludeAudio(e.target.checked)}
+															className="h-3.5 w-3.5 cursor-pointer rounded border-zinc-300 text-zinc-900 accent-zinc-900 focus:ring-0 dark:border-zinc-600 dark:accent-zinc-100"
+														/>
+													</div>
+
 													<p className="text-[10px] text-zinc-400">
-														Photorealistic Wan 2.2 ({videoDuration}s) with
-														topic-aligned dialogue acoustics and uni_pc sampling
+														Photorealistic Wan 2.2 ({videoDuration}s) with{" "}
+														{includeAudio ? "topic-aligned dialogue acoustics and " : "silent "}
+														uni_pc sampling
 													</p>
 												</div>
 											)}

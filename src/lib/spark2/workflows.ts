@@ -159,22 +159,39 @@ export function setupTextToVideo(
 			wf["7"].inputs.steps = steps;
 			wf["7"].inputs.seed = seed;
 		}
-		// Audio prompt & duration (Node 13: Stable Audio positive prompt)
-		const audioPrompt =
-			options?.audioPrompt ||
-			`Professional broadcast television news intro theme with tense orchestral motif and subtle electronic percussion, layered with an authoritative newsroom anchor speaking clearly into studio microphone: "${prompt}", pristine broadcast acoustics, polished television network sound production`;
-		if (wf["13"]?.inputs) {
-			wf["13"].inputs.text = audioPrompt;
-		}
-		const audioSeconds = Math.max(2, Math.round((length / 16) * 10) / 10);
-		if (wf["12"]?.inputs) {
-			wf["12"].inputs.seconds = audioSeconds;
-		}
-		if (wf["15"]?.inputs) {
-			wf["15"].inputs.seconds_total = audioSeconds;
-		}
-		if (wf["16"]?.inputs) {
-			wf["16"].inputs.seed = seed;
+		// Audio configuration (Stable Audio Open 1.0)
+		if (options?.includeAudio === false) {
+			// User opted to exclude audio track: omit Stable Audio sampling & wiring
+			if (wf["18"]?.inputs) {
+				delete wf["18"].inputs.audio;
+			}
+			delete wf["10"];
+			delete wf["11"];
+			delete wf["12"];
+			delete wf["13"];
+			delete wf["14"];
+			delete wf["15"];
+			delete wf["16"];
+			delete wf["17"];
+			delete wf["19"];
+		} else {
+			// Audio prompt & duration (Node 13: Stable Audio positive prompt)
+			const audioPrompt =
+				options?.audioPrompt ||
+				`Professional broadcast television news intro theme with tense orchestral motif and subtle electronic percussion, layered with an authoritative newsroom anchor speaking clearly into studio microphone: "${prompt}", pristine broadcast acoustics, polished television network sound production`;
+			if (wf["13"]?.inputs) {
+				wf["13"].inputs.text = audioPrompt;
+			}
+			const audioSeconds = Math.max(2, Math.round((length / 16) * 10) / 10);
+			if (wf["12"]?.inputs) {
+				wf["12"].inputs.seconds = audioSeconds;
+			}
+			if (wf["15"]?.inputs) {
+				wf["15"].inputs.seconds_total = audioSeconds;
+			}
+			if (wf["16"]?.inputs) {
+				wf["16"].inputs.seed = seed;
+			}
 		}
 
 		// Node 18: VHS_VideoCombine output prefix

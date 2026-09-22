@@ -61,6 +61,7 @@ export async function POST(request: NextRequest) {
 			mediaModel = "flux",
 			videoModel = "wan22",
 			videoDuration = 10,
+			includeAudio = true,
 		} = body;
 
 		const targetPlatforms =
@@ -190,6 +191,7 @@ export async function POST(request: NextRequest) {
 								length: frameLength,
 								steps: 20,
 								audioPrompt,
+								includeAudio: includeAudio !== false,
 								savePath,
 								timeout: timeoutMs,
 							});

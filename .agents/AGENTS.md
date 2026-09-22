@@ -79,8 +79,10 @@ This document serves as the persistent repository reference for One-Post, captur
 - **Durations & Frame Rates**:
   - Presets: `[5s]` (81 frames at 16fps), `[10s]` (161 frames), `[12s]` (193 frames), `[15s]` (241 frames).
   - Enforced minimum: `Math.max(5, videoDuration)`.
-- **Dialogue-Aligned Cinematic Audio**:
+- **Dialogue-Aligned Cinematic Audio & Include/Exclude Toggle**:
   - Engine: **Stable Audio Open 1.0** (`stable_audio_open_1.0.safetensors` + `t5_base.safetensors`).
+  - Toggle Option: UI provides an option to include or exclude audio (`includeAudio: boolean`, default `true`).
+  - When excluded (`includeAudio: false`), ComfyUI workflow completely omits Stable Audio sampling nodes and disconnects the audio input from `VHS_VideoCombine`, producing silent MP4 output with faster rendering time and lower GPU utilization.
   - Loudness Normalizer: `NormalizeAudioLoudness` (`lufs: -22.0`) to balance audible presence with comfortable listening volume without harsh blaring.
   - Multiplexer: `VHS_VideoCombine` encoding H.264 MP4 with synchronized stereo audio track.
   - Negative Audio Conditioning: `harsh digital clipping, mumble, muffled, silent, glitch, ear rape, low quality noise, distortion`.
