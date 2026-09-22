@@ -130,11 +130,18 @@
       "vae": ["10", 2]
     }
   },
+  "19": {
+    "class_type": "NormalizeAudioLoudness",
+    "inputs": {
+      "audio": ["17", 0],
+      "lufs": -14.0
+    }
+  },
   "18": {
     "class_type": "VHS_VideoCombine",
     "inputs": {
       "images": ["8", 0],
-      "audio": ["17", 0],
+      "audio": ["19", 0],
       "frame_rate": 16,
       "loop_count": 0,
       "filename_prefix": "video/wan22_video",

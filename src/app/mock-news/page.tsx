@@ -980,12 +980,13 @@ export default function MockNewsPage() {
 												{result.video?.url ? (
 													<div className="space-y-2.5">
 														<div className="max-h-[220px] overflow-hidden rounded-md border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-950">
+															{/* biome-ignore lint/a11y/useMediaCaption: Generated synthetic video preview */}
 															<video
 																src={result.video.url}
 																controls
 																autoPlay
 																loop
-																muted
+																playsInline
 																className="h-full w-full object-cover"
 															/>
 														</div>

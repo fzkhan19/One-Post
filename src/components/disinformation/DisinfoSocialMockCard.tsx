@@ -1,6 +1,5 @@
 "use client";
 
-import React, { useRef, useState } from "react";
 import type { DisinformationResult, Platform } from "@/lib/ai/disinformation";
 import type { MediaAssetInfo } from "@/lib/cache/disinfoCache";
 import {
@@ -9,13 +8,14 @@ import {
 	MessageCircle,
 	MoreHorizontal,
 	Music2,
-	Play,
 	Pause,
+	Play,
 	Repeat2,
 	Share2,
 	Volume2,
 	VolumeX,
 } from "lucide-react";
+import React, { useRef, useState } from "react";
 
 interface DisinfoSocialMockCardProps {
 	platform: Platform;
@@ -35,8 +35,24 @@ export function DisinfoSocialMockCard({
 	compact = false,
 }: DisinfoSocialMockCardProps) {
 	const [isPlaying, setIsPlaying] = useState(true);
-	const [isMuted, setIsMuted] = useState(true);
+	const [isMuted, setIsMuted] = useState(false);
 	const videoRef = useRef<HTMLVideoElement>(null);
+
+	// Try unmuting video on mount (fallback to muted if browser blocks unmuted autoplay)
+	// biome-ignore lint/correctness/useExhaustiveDependencies: run on video url change to play new video
+	React.useEffect(() => {
+		if (videoRef.current) {
+			videoRef.current.muted = false;
+			videoRef.current.play().catch(() => {
+				// Browser autoplay policy blocked unmuted playback; fallback to muted autoplay
+				if (videoRef.current) {
+					videoRef.current.muted = true;
+					setIsMuted(true);
+					videoRef.current.play().catch(() => {});
+				}
+			});
+		}
+	}, [video?.url]);
 
 	const togglePlay = () => {
 		if (!videoRef.current) return;
@@ -51,20 +67,18 @@ export function DisinfoSocialMockCard({
 
 	const toggleMute = () => {
 		if (!videoRef.current) return;
-		videoRef.current.muted = !videoRef.current.muted;
-		setIsMuted(videoRef.current.muted);
+		const nextMuted = !videoRef.current.muted;
+		videoRef.current.muted = nextMuted;
+		setIsMuted(nextMuted);
 	};
 
 	// Determine which media to display
 	const hasVideo = Boolean(video?.url);
 	const hasImage = Boolean(image?.url);
 
-	const showVideo =
-		activeMediaType === "video" ? hasVideo : hasVideo;
+	const showVideo = activeMediaType === "video" ? hasVideo : hasVideo;
 	const showImage =
-		activeMediaType === "image"
-			? hasImage
-			: !showVideo && hasImage;
+		activeMediaType === "image" ? hasImage : !showVideo && hasImage;
 
 	// 1. TWITTER / X CARD
 	if (platform === "twitter") {
@@ -72,7 +86,7 @@ export function DisinfoSocialMockCard({
 			<div
 				className={`w-full ${
 					compact ? "max-w-[480px]" : "max-w-[540px]"
-				} space-y-3 rounded-xl border border-zinc-200 bg-white p-4 font-sans text-zinc-900 shadow-xs dark:border-zinc-800 dark:bg-black dark:text-white transition-all`}
+				} space-y-3 rounded-xl border border-zinc-200 bg-white p-4 font-sans text-zinc-900 shadow-xs transition-all dark:border-zinc-800 dark:bg-black dark:text-white`}
 			>
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-2.5">
@@ -85,7 +99,9 @@ export function DisinfoSocialMockCard({
 									Global Wire Network
 								</span>
 								<span className="text-blue-500 text-xs">✓</span>
-								<span className="text-[11px] text-zinc-500">@GlobalWireNet</span>
+								<span className="text-[11px] text-zinc-500">
+									@GlobalWireNet
+								</span>
 							</div>
 							<span className="text-[10px] text-zinc-400">
 								Breaking Wire Simulation
@@ -100,7 +116,7 @@ export function DisinfoSocialMockCard({
 				</p>
 
 				{(showVideo || showImage) && (
-					<div className="relative max-h-[340px] overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 group">
+					<div className="group relative max-h-[340px] overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900">
 						{showVideo && video?.url ? (
 							<>
 								<video
@@ -112,7 +128,7 @@ export function DisinfoSocialMockCard({
 									playsInline
 									className="h-full max-h-[340px] w-full object-cover"
 								/>
-								<div className="absolute bottom-2 right-2 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 backdrop-blur-xs p-1 rounded-md text-white">
+								<div className="absolute right-2 bottom-2 flex items-center gap-1.5 rounded-md bg-black/60 p-1 text-white opacity-0 backdrop-blur-xs transition-opacity group-hover:opacity-100">
 									<button
 										type="button"
 										onClick={togglePlay}
@@ -138,7 +154,7 @@ export function DisinfoSocialMockCard({
 										)}
 									</button>
 								</div>
-								<div className="absolute top-2 left-2 rounded bg-black/60 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-white">
+								<div className="absolute top-2 left-2 rounded bg-black/60 px-1.5 py-0.5 font-mono text-[9px] text-white uppercase tracking-wider">
 									Video
 								</div>
 							</>
@@ -149,7 +165,7 @@ export function DisinfoSocialMockCard({
 									alt="Twitter attachment"
 									className="h-full max-h-[340px] w-full object-cover"
 								/>
-								<div className="absolute top-2 left-2 rounded bg-black/60 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-white">
+								<div className="absolute top-2 left-2 rounded bg-black/60 px-1.5 py-0.5 font-mono text-[9px] text-white uppercase tracking-wider">
 									Image
 								</div>
 							</>
@@ -158,19 +174,19 @@ export function DisinfoSocialMockCard({
 				)}
 
 				<div className="flex items-center justify-between border-zinc-100 border-t px-1 pt-2 text-xs text-zinc-500 dark:border-zinc-800">
-					<span className="flex items-center gap-1.5 hover:text-blue-500 cursor-pointer">
+					<span className="flex cursor-pointer items-center gap-1.5 hover:text-blue-500">
 						<MessageCircle className="h-3.5 w-3.5" /> 1.2K
 					</span>
-					<span className="flex items-center gap-1.5 hover:text-emerald-500 cursor-pointer">
+					<span className="flex cursor-pointer items-center gap-1.5 hover:text-emerald-500">
 						<Repeat2 className="h-3.5 w-3.5" /> 8.4K
 					</span>
-					<span className="flex items-center gap-1.5 hover:text-red-500 cursor-pointer">
+					<span className="flex cursor-pointer items-center gap-1.5 hover:text-red-500">
 						<Heart className="h-3.5 w-3.5" /> 24.1K
 					</span>
-					<span className="flex items-center gap-1.5 hover:text-amber-500 cursor-pointer">
+					<span className="flex cursor-pointer items-center gap-1.5 hover:text-amber-500">
 						<Bookmark className="h-3.5 w-3.5" /> 3.9K
 					</span>
-					<Share2 className="h-3.5 w-3.5 hover:text-zinc-300 cursor-pointer" />
+					<Share2 className="h-3.5 w-3.5 cursor-pointer hover:text-zinc-300" />
 				</div>
 			</div>
 		);
@@ -182,7 +198,7 @@ export function DisinfoSocialMockCard({
 			<div
 				className={`w-full ${
 					compact ? "max-w-[380px]" : "max-w-[420px]"
-				} overflow-hidden rounded-xl border border-zinc-200 bg-white font-sans text-zinc-900 shadow-xs dark:border-zinc-800 dark:bg-black dark:text-white transition-all`}
+				} overflow-hidden rounded-xl border border-zinc-200 bg-white font-sans text-zinc-900 shadow-xs transition-all dark:border-zinc-800 dark:bg-black dark:text-white`}
 			>
 				<div className="flex items-center justify-between border-zinc-100 border-b p-3 dark:border-zinc-800">
 					<div className="flex items-center gap-2">
@@ -196,7 +212,7 @@ export function DisinfoSocialMockCard({
 					<MoreHorizontal className="h-4 w-4 text-zinc-400" />
 				</div>
 
-				<div className="relative flex aspect-square items-center justify-center overflow-hidden bg-zinc-100 dark:bg-zinc-900 group">
+				<div className="group relative flex aspect-square items-center justify-center overflow-hidden bg-zinc-100 dark:bg-zinc-900">
 					{showVideo && video?.url ? (
 						<>
 							<video
@@ -208,7 +224,7 @@ export function DisinfoSocialMockCard({
 								playsInline
 								className="h-full w-full object-cover"
 							/>
-							<div className="absolute bottom-2 right-2 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 backdrop-blur-xs p-1 rounded-md text-white">
+							<div className="absolute right-2 bottom-2 flex items-center gap-1.5 rounded-md bg-black/60 p-1 text-white opacity-0 backdrop-blur-xs transition-opacity group-hover:opacity-100">
 								<button
 									type="button"
 									onClick={togglePlay}
@@ -232,7 +248,7 @@ export function DisinfoSocialMockCard({
 									)}
 								</button>
 							</div>
-							<div className="absolute top-2 left-2 rounded bg-black/60 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-white">
+							<div className="absolute top-2 left-2 rounded bg-black/60 px-1.5 py-0.5 font-mono text-[9px] text-white uppercase tracking-wider">
 								Reel / Video
 							</div>
 						</>
@@ -243,7 +259,7 @@ export function DisinfoSocialMockCard({
 								alt="Instagram asset"
 								className="h-full w-full object-cover"
 							/>
-							<div className="absolute top-2 left-2 rounded bg-black/60 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-white">
+							<div className="absolute top-2 left-2 rounded bg-black/60 px-1.5 py-0.5 font-mono text-[9px] text-white uppercase tracking-wider">
 								Post Image
 							</div>
 						</>
@@ -255,7 +271,7 @@ export function DisinfoSocialMockCard({
 				<div className="space-y-2 p-3.5">
 					<div className="flex items-center justify-between">
 						<div className="flex items-center gap-3">
-							<Heart className="h-5 w-5 fill-red-500 text-red-500 cursor-pointer" />
+							<Heart className="h-5 w-5 cursor-pointer fill-red-500 text-red-500" />
 							<MessageCircle className="h-5 w-5 cursor-pointer" />
 							<Share2 className="h-5 w-5 cursor-pointer" />
 						</div>
@@ -288,9 +304,9 @@ export function DisinfoSocialMockCard({
 		<div
 			className={`relative flex ${
 				compact ? "h-[500px] w-[280px]" : "h-[560px] w-[310px]"
-			} flex-col justify-between overflow-hidden rounded-2xl border border-zinc-300 bg-black font-sans text-white shadow-md dark:border-zinc-800 transition-all`}
+			} flex-col justify-between overflow-hidden rounded-2xl border border-zinc-300 bg-black font-sans text-white shadow-md transition-all dark:border-zinc-800`}
 		>
-			<div className="absolute inset-0 z-0 bg-zinc-900 group">
+			<div className="group absolute inset-0 z-0 bg-zinc-900">
 				{showVideo && video?.url ? (
 					<>
 						<video
@@ -302,7 +318,7 @@ export function DisinfoSocialMockCard({
 							playsInline
 							className="h-full w-full object-cover"
 						/>
-						<div className="absolute top-10 right-2 z-20 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 backdrop-blur-xs p-1 rounded-md text-white">
+						<div className="absolute top-10 right-2 z-20 flex items-center gap-1 rounded-md bg-black/60 p-1 text-white opacity-0 backdrop-blur-xs transition-opacity group-hover:opacity-100">
 							<button
 								type="button"
 								onClick={togglePlay}
@@ -338,7 +354,7 @@ export function DisinfoSocialMockCard({
 						Vertical Media Frame
 					</div>
 				)}
-				<div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/85 pointer-events-none" />
+				<div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/85" />
 			</div>
 
 			{/* Top indicator */}
