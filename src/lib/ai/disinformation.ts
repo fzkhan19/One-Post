@@ -1,7 +1,11 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || "");
-const geminiModel = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
+function getGeminiModel() {
+	const apiKey = process.env.GOOGLE_API_KEY || "";
+	if (!apiKey) return null;
+	const genAI = new GoogleGenerativeAI(apiKey);
+	return genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
+}
 
 export type DisinformationVector =
 	| "fabricated_breaking_news"
@@ -85,8 +89,8 @@ export async function generateDisinformation(
 		})
 		.join("\n");
 
-	const systemPrompt = `You are an AI generating realistic mock news / synthetic social media information given a topic.
-You must tailor the output specifically for TWITTER (concise, breaking news style, <=280 chars), INSTAGRAM (longer caption, hooks, emojis, rich hashtags), and TIKTOK (viral caption, high urgency, short punchy hook for vertical feed).
+	const systemPrompt = `You are an elite multimodal AI prompt engineer and synthetic media synthesizer specializing in generating highly authentic mock news packages.
+You must tailor the output specifically for TWITTER (concise breaking wire, <=280 chars), INSTAGRAM (engaging caption, hook, hashtags), and TIKTOK (viral curiosity hook, high urgency).
 
 Target Topic: "${topic}"
 Style Vector: "${vector}" (${vectorInstruction})
@@ -95,9 +99,28 @@ Selected Platforms: ${selectedPlatforms.map((p) => p.toUpperCase()).join(", ")}
 Media Context Guidelines for Selected Platforms:
 ${mediaGuidelineList}
 
-CRITICAL RULES FOR MEDIA PROMPTS:
-1. "suggestedImagePrompt": Must be a detailed, vivid visual description explicitly describing the key subjects, setting, lighting, and action from the Target Topic ("${topic}"). DO NOT use generic stock footage descriptions.
-2. "suggestedVideoPrompt": Must be a cinematic, highly specific visual description for video diffusion generation (Hunyuan Video) that DIRECTLY visualizes the target topic scenario ("${topic}"). Detail the setting, subjects, camera movement (e.g. slow pan, tracking shot, handheld movement), dramatic lighting, and specific actions happening in the scene that depict this topic.
+=============================================================================
+STRICT PROMPT ENGINEERING GUIDELINES FOR THE GENERATION ENGINES:
+=============================================================================
+
+1. "suggestedImagePrompt" (Tailored for FLUX.1 Schnell & FLUX.2 Dev):
+   - Flux excels with natural, descriptive prose that specifies the exact visual scene rather than comma-separated keywords.
+   - You MUST explicitly depict the specific subject matter, people, institutional headquarters, documents, vehicles, or physical objects central to "${topic}".
+   - Specify photographic attributes: camera perspective (e.g. eye-level news telephoto, wide press conference view, documentary 35mm), lighting (e.g. sharp directional overhead conference lights, moody twilight drizzle, high-contrast press flash), texture (e.g. realistic skin pores, reflective glass facade, matte press badge lanyard), depth of field, and photorealistic photojournalism style.
+   - AVOID quality buzzwords like "hyperrealistic, 8k, photorealistic masterpiece". Instead, describe the physical qualities that prove realism (e.g. "detailed photographic grain, natural ambient office bounce lighting, authentic editorial news photo").
+
+2. "suggestedVideoPrompt" (Tailored specifically for WAN 2.2 TI2V 5B Diffusion Model):
+   - Wan 2.2 requires explicit, continuous kinetic descriptions that directly dramatize "${topic}".
+   - Structuring Formula for Wan 2.2:
+     [Camera Movement] + [Primary Subject & Setting directly depicting ${topic}] + [Continuous Temporal Motion / Action] + [Cinematic Lighting & Atmosphere].
+   - EXPLICIT CAMERA MOVEMENT: Specify continuous cinematic motion: e.g. "Slow forward camera dolly tracking shot", "Smooth low-angle pan", "Handheld documentary camera following...", "Subtle arc shot circling...".
+   - EXPLICIT TEMPORAL ACTION: Describe what physically moves across the 10-15 second duration: e.g. "spokesperson sternly leans toward the podium microphone, glancing at briefing notes as camera shutters flash in the background", or "financial traders urgently gather around a blinking terminal displaying alert graphs as digital tickers stream overhead".
+   - HIGH REALISM & ANATOMY: Insist on natural physical motion, authentic editorial newsroom/field acoustics, and high-fidelity textures.
+
+3. "suggestedAudioPrompt" (Tailored for Stable Audio Open 1.0):
+   - Must be natural, dialogue-centric spoken statement or press conference address reflecting "${topic}".
+   - Format: "Spokesperson speaking clearly into podium microphone: '[Short 1-sentence urgent quote about ${topic}]', authentic television broadcast news acoustics, subtle press conference background camera clicks and quiet room reverberation".
+   - AVOID music, dramatic cinematic orchestral scores, or synth instruments.
 
 Respond ONLY with a valid, raw JSON object (no markdown code blocks, no backticks, no explanatory text, no <think>...</think> tags).
 The JSON must follow this exact structure:
@@ -121,15 +144,16 @@ The JSON must follow this exact structure:
       "engagementPrompt": "Wait till the end 😳 Share before this gets taken down!"
     }
   },
-  "suggestedImagePrompt": "Vivid photorealistic scene explicitly visualizing '${topic}' tailored for ${primaryPlatform}",
-  "suggestedVideoPrompt": "Cinematic dynamic video scene explicitly depicting '${topic}' with camera movement and visual action tailored for ${primaryPlatform}",
-  "suggestedAudioPrompt": "Clear authoritative spoken dialogue delivered through a broadcast microphone about '${topic}', realistic spokesperson dialogue voice statement, television news studio acoustics, subtle press conference background murmur"
+  "suggestedImagePrompt": "Detailed natural prose photograph describing '${topic}' tailored for Flux",
+  "suggestedVideoPrompt": "Cinematic camera movement and continuous motion scene explicitly depicting '${topic}' for Wan 2.2",
+  "suggestedAudioPrompt": "Dialogue statement quoting headline into microphone in realistic newsroom acoustics"
 }`;
 
 	let rawJson = "";
 
 	// 1. Primary: Gemini 3.6 Flash (fast, high-quality, rich topic adherence)
-	if (process.env.GOOGLE_API_KEY) {
+	const geminiModel = getGeminiModel();
+	if (geminiModel) {
 		try {
 			const result = await geminiModel.generateContent({
 				contents: [{ role: "user", parts: [{ text: systemPrompt }] }],
